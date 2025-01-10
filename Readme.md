@@ -1,22 +1,21 @@
-### Final Answer
-
-```markdown
 # E-commerce Metrics Pipeline with Airflow
 
 This project is designed to automate the calculation and storage of key e-commerce metrics using Apache Airflow. The pipeline connects to a production database, calculates daily metrics, and stores the results in an analytical database for further analysis and reporting.
 
 ## Table of Contents
 
-1. [Project Overview](#project-overview)
-2. [Features](#features)
-3. [Installation](#installation)
-4. [Configuration](#configuration)
-5. [Usage](#usage)
-6. [Metrics Calculated](#metrics-calculated)
-7. [Database Schema](#database-schema)
-8. [Airflow DAG](#airflow-dag)
-9. [Contributing](#contributing)
-10. [License](#license)
+- [E-commerce Metrics Pipeline with Airflow](#e-commerce-metrics-pipeline-with-airflow)
+  - [Table of Contents](#table-of-contents)
+  - [Project Overview](#project-overview)
+  - [Features](#features)
+  - [Installation](#installation)
+  - [Configuration](#configuration)
+  - [Usage](#usage)
+  - [Metrics Calculated](#metrics-calculated)
+  - [Database Schema](#database-schema)
+  - [Airflow DAG](#airflow-dag)
+  - [Contributing](#contributing)
+  - [License](#license)
 
 ## Project Overview
 
@@ -141,12 +140,3 @@ Contributions are welcome! Please follow these steps:
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-```
-
-### Notes
-
-- **Customization**: Update the repository URL, database connection details, and other configurations as needed.
-- **Documentation**: Ensure that the `init.sql` file and any other relevant scripts are included in the repository for reference.
-- **Testing**: Provide instructions for testing the DAG locally before deployment.
-
-This README provides a comprehensive guide to setting up and using the e-commerce metrics pipeline, making it easy for others to understand and contribute to the project.
