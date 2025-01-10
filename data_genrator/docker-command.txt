@@ -1,0 +1,1 @@
+docker exec -it postgres-local psql -U postgres -d e_commerce_database -f ./init.sql
