@@ -45,8 +45,8 @@ def connect_to_db() -> connection:
             dbname="e_commerce_database",
             user="postgres",
             password="postgres",
-            host="localhost",
-            port="1234"
+            host="postgres-prod",
+            port="5432"
         )
         logging.info("Connexion établie avec succès")
         return conn
@@ -98,6 +98,7 @@ def generate_categories(conn: connection, num_categories: int = 10) -> None:
 
 def generate_products(conn: connection, num_products: int = 500) -> None:
     """Génère des produits."""
+    num_products = random.randint(400, 1000)
     logging.info(f"Génération de {num_products} produits")
     cur = conn.cursor()
     fake = Faker()
@@ -135,6 +136,7 @@ def generate_products(conn: connection, num_products: int = 500) -> None:
 
 def generate_users(conn: connection, num_users: int = 1000) -> None:
     """Génère des utilisateurs."""
+    num_users = random.randint(1000, 2500)
     logging.info(f"Génération de {num_users} utilisateurs")
     cur = conn.cursor()
     fake = Faker()
@@ -255,7 +257,7 @@ def generate_orders(conn: connection, start_date: datetime, end_date: datetime) 
                 if not addresses:
                     continue
 
-                num_orders = random.randint(0, 4)
+                num_orders = random.randint(0, 10)
                 for _ in range(num_orders):
                     billing_address_id = random.choice(addresses)
                     shipping_address_id = random.choice(addresses)
@@ -308,12 +310,12 @@ def generate_order_items(conn: connection) -> None:
 
         total_orders = len(orders)
         for i, order_id in enumerate(orders):
-            num_items = random.randint(1, 5)
+            num_items = random.randint(1, 10)
             for _ in range(num_items):
                 try:
                     product = random.choice(products)
                     product_id, price = product
-                    quantity = random.randint(1, 5)
+                    quantity = random.randint(1, 10)
                     
                     insert_with_retry(
                         cur,
@@ -353,7 +355,7 @@ def generate_payments(conn: connection) -> None:
             try:
                 payment_method = random.choice(['credit_card', 'paypal', 'bank_transfer'])
                 transaction_id = fake.unique.uuid4()
-                payment_date = fake.date_time_between(start_date='-180d', end_date='now')
+                payment_date = fake.date_time_between(start_date='-10000d', end_date='now')
 
                 insert_with_retry(
                     cur,
@@ -476,6 +478,7 @@ def generate_reviews(conn: connection) -> None:
 
 def generate_product_views(conn: connection, num_views: int = 5000) -> None:
     """Génère des vues de produits."""
+    num_views = random.randint(5000, 10000)
     logging.info(f"Génération de {num_views} vues de produits")
     cur = conn.cursor()
     fake = Faker()
@@ -494,7 +497,7 @@ def generate_product_views(conn: connection, num_views: int = 5000) -> None:
             try:
                 user_id = random.choice(users)
                 product_id = random.choice(products)
-                view_date = fake.date_time_between(start_date='-180d', end_date='now')
+                view_date = fake.date_time_between(start_date='-10000d', end_date='now')
 
                 insert_with_retry(
                     cur,

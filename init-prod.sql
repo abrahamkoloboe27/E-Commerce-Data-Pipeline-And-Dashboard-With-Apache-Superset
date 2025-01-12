@@ -1,10 +1,9 @@
--- Logging: Début de l'initialisation de la base de données
-\echo 'Début de la suppression des tables existantes...'
+
 
 -- Suppression des tables existantes si nécessaire
 DO $$ 
 BEGIN
-    \echo 'Suppression des tables en cours...';
+
     DROP TABLE IF EXISTS product_views CASCADE;
     DROP TABLE IF EXISTS reviews CASCADE;
     DROP TABLE IF EXISTS shipments CASCADE;
@@ -15,10 +14,10 @@ BEGIN
     DROP TABLE IF EXISTS categories CASCADE;
     DROP TABLE IF EXISTS addresses CASCADE;
     DROP TABLE IF EXISTS users CASCADE;
-    \echo 'Suppression des tables terminée';
+    
 END $$;
 
-\echo 'Début de la création des tables...'
+
 
 -- Create Categories Table
 \echo 'Création de la table categories...'
@@ -27,7 +26,6 @@ CREATE TABLE IF NOT EXISTS categories (
     name VARCHAR(100) NOT NULL UNIQUE,
     description TEXT
 );
-\echo 'Table categories créée avec succès'
 
 -- Create Users Table
 \echo 'Création de la table users...'
@@ -40,7 +38,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     default_address_id INTEGER
 );
-\echo 'Table users créée avec succès'
+
 
 -- Create Addresses Table
 \echo 'Création de la table addresses...'
@@ -72,10 +70,8 @@ CREATE TABLE IF NOT EXISTS products (
     category_id INTEGER REFERENCES categories(category_id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-\echo 'Table products créée avec succès'
 
--- Create Orders Table
-\echo 'Création de la table orders...'
+
 CREATE TABLE IF NOT EXISTS orders (
     order_id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(user_id) ON DELETE SET NULL,
@@ -85,7 +81,8 @@ CREATE TABLE IF NOT EXISTS orders (
     total_amount DECIMAL(10,2) NOT NULL,
     status VARCHAR(50) NOT NULL
 );
-\echo 'Table orders créée avec succès'
+
+
 
 -- Create Order Items Table
 \echo 'Création de la table order_items...'
@@ -96,10 +93,9 @@ CREATE TABLE IF NOT EXISTS order_items (
     quantity INTEGER NOT NULL,
     price DECIMAL(10,2) NOT NULL
 );
-\echo 'Table order_items créée avec succès'
 
--- Create Payments Table
-\echo 'Création de la table payments...'
+
+
 CREATE TABLE IF NOT EXISTS payments (
     payment_id SERIAL PRIMARY KEY,
     order_id INTEGER REFERENCES orders(order_id) ON DELETE CASCADE,
@@ -108,7 +104,7 @@ CREATE TABLE IF NOT EXISTS payments (
     transaction_id VARCHAR(100) UNIQUE NOT NULL,
     payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-\echo 'Table payments créée avec succès'
+
 
 -- Create Shipments Table
 \echo 'Création de la table shipments...'
@@ -119,7 +115,7 @@ CREATE TABLE IF NOT EXISTS shipments (
     tracking_number VARCHAR(100) UNIQUE,
     status VARCHAR(50)
 );
-\echo 'Table shipments créée avec succès'
+
 
 -- Create Reviews Table
 \echo 'Création de la table reviews...'
@@ -131,23 +127,19 @@ CREATE TABLE IF NOT EXISTS reviews (
     comment TEXT,
     review_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-\echo 'Table reviews créée avec succès'
 
--- Create Product Views Table
-\echo 'Création de la table product_views...'
+
+
 CREATE TABLE IF NOT EXISTS product_views (
     view_id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
     product_id INTEGER REFERENCES products(product_id) ON DELETE CASCADE,
     view_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-\echo 'Table product_views créée avec succès'
 
-\echo 'Début de la création des index...'
--- Create Indexes for Performance
 DO $$ 
 BEGIN
-    \echo 'Création des index en cours...';
+
     IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_orders_user_id') THEN
         CREATE INDEX idx_orders_user_id ON orders(user_id);
     END IF;
@@ -195,10 +187,10 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_product_views_product_id') THEN
         CREATE INDEX idx_product_views_product_id ON product_views(product_id);
     END IF;
-    \echo 'Création des index terminée';
+   
 END $$;
 
-\echo 'Début de l''insertion des données initiales...'
+
 -- Initial Data Insertion
 INSERT INTO categories (name, description) 
 VALUES
@@ -207,13 +199,13 @@ VALUES
     ('Home & Kitchen', 'Home appliances and kitchenware'),
     ('Books', 'Fiction and non-fiction books')
 ON CONFLICT (name) DO NOTHING;
-\echo 'Données initiales insérées avec succès'
 
 -- Then users
 INSERT INTO users (first_name, last_name, email, password_hash) 
 VALUES
     ('John', 'Doe', 'john.doe@example.com', 'password_hash'),
-    ('Jane', 'Smith', 'jane.smith@example.com', 'password_hash')
+    ('Jane', 'Smith', 'jane.smith@example.com', 'password_hash'),
+    ('Abraham','KOLOBOE','abklb27@gmail.com','password_hash')
 ON CONFLICT (email) DO NOTHING;
 
 -- Then addresses
@@ -278,4 +270,3 @@ INSERT INTO product_views (user_id, product_id) VALUES
 (1, 2),
 (2, 2),
 (2, 4);
-\echo 'Initialisation de la base de données terminée avec succès'

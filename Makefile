@@ -12,3 +12,5 @@ down :
 	docker compose down
 down-volumes : 
 	docker compose down -v
+
+down-volumes-build-up : down-volumes build up

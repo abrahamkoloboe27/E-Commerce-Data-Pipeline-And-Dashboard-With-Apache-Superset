@@ -5,3 +5,6 @@ openpyxl
 psycopg2-binary
 pyarrow
 fastparquet
+minio
+polars
+apache-airflow-providers-postgres

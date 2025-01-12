@@ -1,9 +1,3 @@
--- Create the database
-CREATE DATABASE ecommerce_metrics;
-
--- Connect to the new database
-\c ecommerce_metrics;
-
 -- Create table for n_user metric
 DROP TABLE IF EXISTS n_user;
 CREATE TABLE n_user (
