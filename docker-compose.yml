@@ -41,6 +41,9 @@ services:
       - postgres-db-volume:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    depends_on : 
+      data_genrator : 
+        condition: service_completed_successfully
 
   data-genrator : 
     image : data_genrator
@@ -67,6 +70,9 @@ services:
     volumes:
       - postgres-etl-db-volume:/var/lib/postgresql/data
       - ./init-analytics.sql:/docker-entrypoint-initdb.d/init-analytics.sql
+    depends_on : 
+      data_genrator : 
+        condition: service_completed_successfully
 
   postgres-prod:
     image: postgres:13
