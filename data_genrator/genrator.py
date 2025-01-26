@@ -96,9 +96,9 @@ def generate_categories(conn: connection, num_categories: int = 10) -> None:
     finally:
         cur.close()
 
-def generate_products(conn: connection, num_products: int = 500) -> None:
+def generate_products(conn: connection, num_products: int = 100) -> None:
     """Génère des produits."""
-    num_products = random.randint(400, 1000)
+    num_products = random.randint(400, 500)
     logging.info(f"Génération de {num_products} produits")
     cur = conn.cursor()
     fake = Faker()
@@ -136,7 +136,7 @@ def generate_products(conn: connection, num_products: int = 500) -> None:
 
 def generate_users(conn: connection, num_users: int = 1000) -> None:
     """Génère des utilisateurs."""
-    num_users = random.randint(1000, 2500)
+    num_users = random.randint(1000, 2000)
     logging.info(f"Génération de {num_users} utilisateurs")
     cur = conn.cursor()
     fake = Faker()
@@ -355,7 +355,7 @@ def generate_payments(conn: connection) -> None:
             try:
                 payment_method = random.choice(['credit_card', 'paypal', 'bank_transfer'])
                 transaction_id = fake.unique.uuid4()
-                payment_date = fake.date_time_between(start_date='-10000d', end_date='now')
+                payment_date = fake.date_time_between(start_date='-100d', end_date='now')
 
                 insert_with_retry(
                     cur,
@@ -478,7 +478,7 @@ def generate_reviews(conn: connection) -> None:
 
 def generate_product_views(conn: connection, num_views: int = 5000) -> None:
     """Génère des vues de produits."""
-    num_views = random.randint(5000, 10000)
+    num_views = random.randint(500, 5000)
     logging.info(f"Génération de {num_views} vues de produits")
     cur = conn.cursor()
     fake = Faker()
@@ -497,7 +497,7 @@ def generate_product_views(conn: connection, num_views: int = 5000) -> None:
             try:
                 user_id = random.choice(users)
                 product_id = random.choice(products)
-                view_date = fake.date_time_between(start_date='-10000d', end_date='now')
+                view_date = fake.date_time_between(start_date='-100d', end_date='now')
 
                 insert_with_retry(
                     cur,
@@ -529,7 +529,7 @@ def main() -> None:
     
     try:
         conn = connect_to_db()
-        start_date = datetime.now() - timedelta(days=10000)
+        start_date = datetime.now() - timedelta(days=100)
         end_date = datetime.now()
         
         # Génération des données dans l'ordre des dépendances
