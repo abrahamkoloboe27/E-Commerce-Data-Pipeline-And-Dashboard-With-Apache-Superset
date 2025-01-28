@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS users (
     last_name VARCHAR(50) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP ,
     default_address_id INTEGER
 );
 
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS addresses (
     street TEXT NOT NULL,
     postal_code VARCHAR(20),
     is_default BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP 
 );
 
 -- Ajout de la contrainte de clé étrangère pour default_address_id après création de la table addresses
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS products (
     description TEXT,
     price DECIMAL(10,2) NOT NULL,
     category_id INTEGER REFERENCES categories(category_id) ON DELETE SET NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP 
 );
 
 
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS orders (
     user_id INTEGER REFERENCES users(user_id) ON DELETE SET NULL,
     billing_address_id INTEGER REFERENCES addresses(address_id) ON DELETE SET NULL,
     shipping_address_id INTEGER REFERENCES addresses(address_id) ON DELETE SET NULL,
-    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    order_date TIMESTAMP ,
     total_amount DECIMAL(10,2) NOT NULL,
     status VARCHAR(50) NOT NULL
 );
@@ -102,7 +102,7 @@ CREATE TABLE IF NOT EXISTS payments (
     payment_method VARCHAR(50) NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
     transaction_id VARCHAR(100) UNIQUE NOT NULL,
-    payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    payment_date TIMESTAMP 
 );
 
 
@@ -125,7 +125,7 @@ CREATE TABLE IF NOT EXISTS reviews (
     product_id INTEGER REFERENCES products(product_id) ON DELETE CASCADE,
     rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
     comment TEXT,
-    review_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    review_date TIMESTAMP 
 );
 
 
@@ -134,7 +134,7 @@ CREATE TABLE IF NOT EXISTS product_views (
     view_id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
     product_id INTEGER REFERENCES products(product_id) ON DELETE CASCADE,
-    view_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    view_date TIMESTAMP 
 );
 
 DO $$ 

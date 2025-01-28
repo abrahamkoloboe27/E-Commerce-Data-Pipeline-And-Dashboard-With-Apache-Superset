@@ -145,6 +145,10 @@ services:
     volumes:
       - ~/minio/data:/data
     command: server /data --console-address ":9001" & mc mb ecommerce-data
+    depends_on:
+      airflow-webserver:
+        condition: service_started
+
     
 
   superset:

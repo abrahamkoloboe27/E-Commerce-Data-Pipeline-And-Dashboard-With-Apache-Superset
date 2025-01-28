@@ -113,11 +113,12 @@ def generate_products(conn: connection, num_products: int = 100) -> None:
             product_description = fake.text()
             product_price = round(random.uniform(1.0, 1000.0), 2)
             category_id = random.choice(categories)
+            date = fake.date_time_between(start_date='-100d', end_date='now')
             try:
                 insert_with_retry(
                     cur,
-                    "INSERT INTO products (name, description, price, category_id) VALUES (%s, %s, %s, %s)",
-                    (product_name, product_description, product_price, category_id)
+                    "INSERT INTO products (name, description, price, category_id, created_at) VALUES (%s, %s, %s, %s, %s)",
+                    (product_name, product_description, product_price, category_id, date)
                 )
                 if (i + 1) % 50 == 0:
                     logging.info(f"Progression produits: {i + 1}/{num_products}")
@@ -149,10 +150,11 @@ def generate_users(conn: connection, num_users: int = 1000) -> None:
                 last_name = fake.last_name()
                 email = fake.unique.email()
                 password_hash = fake.password()
+                created_at = fake.date_time_between(start_date='-100d', end_date='now')
                 
                 cur.execute(
-                    "INSERT INTO users (first_name, last_name, email, password_hash) VALUES (%s, %s, %s, %s)",
-                    (first_name, last_name, email, password_hash)
+                    "INSERT INTO users (first_name, last_name, email, password_hash, created_at) VALUES (%s, %s, %s, %s, %s)",
+                    (first_name, last_name, email, password_hash, created_at)
                 )
                 
                 successful_inserts += 1
@@ -201,12 +203,13 @@ def generate_addresses(conn: connection) -> None:
                     street = fake.street_address()
                     postal_code = fake.postcode()
                     is_default = False
+                    date = fake.date_time_between(start_date='-100d', end_date='now')
                     insert_with_retry(
                         cur,
                         """INSERT INTO addresses 
-                           (user_id, country, city, street, postal_code, is_default) 
-                           VALUES (%s, %s, %s, %s, %s, %s) RETURNING address_id""",
-                        (user_id, country, city, street, postal_code, is_default)
+                           (user_id, country, city, street, postal_code, is_default, created_at) 
+                           VALUES (%s, %s, %s, %s, %s, %s, %s ) RETURNING address_id""",
+                        (user_id, country, city, street, postal_code, is_default, date)
                     )
                     address_id = cur.fetchone()[0]
                     addresses.append(address_id)
