@@ -5,26 +5,38 @@ from airflow.operators.empty import EmptyOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from minio import Minio
 from datetime import datetime, timedelta
-import pendulum
+import psycopg2
+import sys
 import polars as pl
 import io
+import logging
+logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler('airflow_logs.log'),
+            logging.StreamHandler(sys.stdout)
+        ]
+    )
 
 # MinIO configuration
-MINIO_ENDPOINT = "localhost:9000"
+MINIO_ENDPOINT = "minio:9000"
 MINIO_ACCESS_KEY = "minioadmin"
 MINIO_SECRET_KEY = "minioadmin"
 MINIO_BUCKET = "ecommerce-data"
 
 def get_minio_client():
-    return Minio(
+    connection = Minio(
         MINIO_ENDPOINT,
         access_key=MINIO_ACCESS_KEY,
         secret_key=MINIO_SECRET_KEY,
         secure=False
     )
+    return connection
 
 def extract_table(table_name: str, **kwargs):
     execution_date = kwargs['execution_date']
+    logging.info(f"Extracting data from {table_name} on {execution_date}")
     date_column_mapping = {
         'users': 'created_at',
         'addresses': 'created_at',
@@ -38,9 +50,15 @@ def extract_table(table_name: str, **kwargs):
     
     # Get the appropriate date column for the table
     date_column = date_column_mapping.get(table_name)
-    
+    logging.info(f"Date column for {table_name}: {date_column}")
     # Create PostgreSQL hook
-    pg_hook = PostgresHook(postgres_conn_id='postgres_default')
+    postgres_connection =  psycopg2.connect(
+            dbname="e_commerce_database",
+            user="postgres",
+            password="postgres",
+            host="postgres-prod",
+            port="5432"
+        )
     
     # Construct query based on whether table has date column
     if date_column:
@@ -53,23 +71,30 @@ def extract_table(table_name: str, **kwargs):
         query = f"SELECT * FROM {table_name}"
     
     # Execute query and get data as Polars DataFrame
-    df = pl.read_database(query=query, connection=pg_hook.get_conn())
+    df = pl.read_database(query=query, connection=postgres_connection)
+    logging.info(f"Extracted {len(df)} records from {table_name}")
+    logging.info(f"Extracted data: {df.head()}")
     
     if len(df) > 0:
         # Convert to parquet bytes
         parquet_buffer = io.BytesIO()
+        logging.info(f"Writing {len(df)} records to parquet")
         df.write_parquet(parquet_buffer)
+        logging.info(f"Finished writing {len(df)} records to parquet")
         parquet_buffer.seek(0)
         
         # Save to MinIO
         minio_client = get_minio_client()
+        logging.info(f"Uploading {len(df)} records to MinIO")
         
         # Create bucket if it doesn't exist
         if not minio_client.bucket_exists(MINIO_BUCKET):
+            logging.info(f"Creating bucket {MINIO_BUCKET}")
             minio_client.make_bucket(MINIO_BUCKET)
         
         # Define the object path in MinIO
         object_path = f"{table_name}/{execution_date.strftime('%Y/%m/%d')}/{table_name}.parquet"
+        logging.info(f"Uploading to {object_path}")
         
         # Upload to MinIO
         minio_client.put_object(
@@ -79,15 +104,17 @@ def extract_table(table_name: str, **kwargs):
             length=parquet_buffer.getbuffer().nbytes,
             content_type='application/octet-stream'
         )
+        logging.info(f"Uploaded {len(df)} records to MinIO")
         
         return f"Extracted and saved {len(df)} records from {table_name}"
-    return f"No data found for {table_name} on {execution_date}"
+    else : 
+        return f"No data found for {table_name} on {execution_date}"
 
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
     'catchup': True,
-    'start_date': datetime(2024, 12, 1),
+    'start_date': datetime(2025, 1, 10),
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 1,
@@ -95,9 +122,13 @@ default_args = {
 }
 
 dag = DAG(
-    'ecommerce_metrics_dag-v2',
+    'ecommerce_metrics_dag',
     default_args=default_args,
     schedule_interval='@daily',
+    max_active_runs=3,
+    tags=['ecommerce', 'data-pipeline'],
+    concurrency=3,      # limite à 10 tâches en parallèle pour ce DAG
+
 )
 
 # List of tables to extract

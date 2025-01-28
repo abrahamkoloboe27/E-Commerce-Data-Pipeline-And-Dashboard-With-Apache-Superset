@@ -192,7 +192,7 @@ def generate_addresses(conn: connection) -> None:
 
         total_users = len(users)
         for i, user_id in enumerate(users):
-            num_addresses = random.randint(1, 3)
+            num_addresses = random.randint(1, 1000)
             addresses = []
             for _ in range(num_addresses):
                 try:
