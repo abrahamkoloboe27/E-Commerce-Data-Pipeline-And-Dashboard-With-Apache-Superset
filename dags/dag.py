@@ -1,10 +1,9 @@
 from airflow import DAG
+from src.utils import *
 from airflow.operators.python_operator import PythonOperator
 from airflow.utils.task_group import TaskGroup
 from airflow.operators.empty import EmptyOperator
 from datetime import datetime, timedelta
-
-from src.utils import *
 
 default_args = {
     'owner': 'airflow',
