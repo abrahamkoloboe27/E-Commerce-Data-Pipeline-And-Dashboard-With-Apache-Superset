@@ -11,10 +11,57 @@ CREATE TABLE IF NOT EXISTS dim_time (
 );
 
 CREATE TABLE IF NOT EXISTS dim_geography (
-    geo_id SERIAL PRIMARY KEY,
+    geography_id SERIAL PRIMARY KEY,
+    country VARCHAR(100),
+    city VARCHAR(100),
+    postal_code VARCHAR(20),
+    UNIQUE(country, city, postal_code)
+);
+
+CREATE TABLE IF NOT EXISTS dim_product (
+    product_id INTEGER PRIMARY KEY,
+    name VARCHAR(255),
+    category_id INTEGER,
+    category_name VARCHAR(100),
+    price DECIMAL(10,2)
+);
+
+-- Create dimension tables with proper constraints
+CREATE TABLE IF NOT EXISTS dim_geography (
+    geography_id SERIAL PRIMARY KEY,
+    country VARCHAR(100),
+    city VARCHAR(100),
+    postal_code VARCHAR(20),
+    UNIQUE(country, city, postal_code)
+);
+
+CREATE TABLE IF NOT EXISTS dim_product (
+    product_id INTEGER PRIMARY KEY,
+    name VARCHAR(255),
+    category_id INTEGER,
+    category_name VARCHAR(100),
+    price DECIMAL(10,2)
+);
+
+CREATE TABLE IF NOT EXISTS dim_user (
+    user_id INTEGER PRIMARY KEY,
+    registration_date DATE NOT NULL,
     country VARCHAR(100) NOT NULL,
     city VARCHAR(100) NOT NULL,
-    postal_code VARCHAR(20)
+    email VARCHAR(255) UNIQUE NOT NULL,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100)
+);
+
+CREATE TABLE IF NOT EXISTS dim_payment_method (
+    payment_method_id SERIAL PRIMARY KEY,
+    method_name VARCHAR(50) NOT NULL,
+    CONSTRAINT uniq_payment_method UNIQUE(method_name)
+);
+
+CREATE TABLE IF NOT EXISTS dim_payment_method (
+    payment_method_id SERIAL PRIMARY KEY,
+    method_name VARCHAR(50) UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS dim_product (
@@ -88,3 +135,7 @@ CREATE INDEX IF NOT EXISTS idx_fact_sales_time ON fact_sales(time_id);
 CREATE INDEX IF NOT EXISTS idx_fact_sales_product ON fact_sales(product_id);
 CREATE INDEX IF NOT EXISTS idx_fact_user_geo ON fact_user_activity(geo_id);
 CREATE INDEX IF NOT EXISTS idx_fact_payment_method ON fact_payment_analytics(payment_method_id);
+CREATE INDEX IF NOT EXISTS idx_geography_country ON dim_geography(country);
+CREATE INDEX IF NOT EXISTS idx_geography_city ON dim_geography(city);
+CREATE INDEX IF NOT EXISTS idx_product_category ON dim_product(category_id);
+CREATE INDEX IF NOT EXISTS idx_user_registration ON dim_user(registration_date);

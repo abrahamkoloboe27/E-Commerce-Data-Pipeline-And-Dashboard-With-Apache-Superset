@@ -1,4 +1,5 @@
 import psycopg2
+from psycopg2 import extras
 from minio import Minio
 import sys
 import polars as pl
@@ -346,8 +347,7 @@ def insert_date_dim(**kwargs):
     year = execution_date.year
     quarter = (execution_date.month - 1) // 3 + 1
     is_weekend = execution_date.weekday() in [5, 6]
-    week_of_year = execution_date.isocalendar()[1]
-    
+    week_of_year = execution_date.isocalendar()[1] 
     
     # Connect to PostgreSQL
     postgres_connection =  psycopg2.connect(
@@ -371,17 +371,14 @@ def insert_date_dim(**kwargs):
     cursor.execute(f"""
         INSERT INTO dim_time (time_id, date, day, month, year, quarter, week_of_year, is_weekend)
         VALUES ({last_id}, '{date}', {day}, {month}, {year}, {quarter}, {week_of_year}, {is_weekend})
+        ON CONFLICT (date) DO NOTHING
     """)
     logging.info(f"""Inserted date dimension for {execution_date} :\n last_id : {last_id} 
                  \n date : {date} \n day : {day} \n month : {month} \n year : {year}
                  \n quarter : {quarter} \n week_of_year : {week_of_year} \n is_weekend : {is_weekend}""")
     postgres_connection.commit()
     logging.info(f"Inserted date dimension for {execution_date}")
-    
-    
-def insert_dim_geography(**kwargs) : 
-    execution_date = kwargs['execution_date']
-    
+    return f"Inserted date dimension for {execution_date}"
     
     
 
@@ -599,7 +596,6 @@ def insert_data_in_dimension_table(table_name: str, unique_columns: list, **kwar
 
     # Configuration des chemins MinIO
     minio_paths = {
-        'dim_time': f"dim_time/{date_str}/dim_time.parquet",
         'dim_geography': f"dim_geography/{date_str}/dim_geography.parquet",
         'dim_product': f"dim_product/{date_str}/dim_product.parquet",
         'dim_user': f"dim_user/{date_str}/dim_user.parquet",
@@ -608,7 +604,6 @@ def insert_data_in_dimension_table(table_name: str, unique_columns: list, **kwar
 
     # Configuration des colonnes obligatoires
     required_columns = {
-        'dim_time': ['date', 'day', 'month', 'year', 'quarter', 'week_of_year', 'is_weekend'],
         'dim_geography': ['country', 'city', 'postal_code'],
         'dim_product': ['product_id', 'name', 'category_id', 'category_name', 'price'],
         'dim_user': ['user_id', 'registration_date', 'country', 'city'],
@@ -629,7 +624,7 @@ def insert_data_in_dimension_table(table_name: str, unique_columns: list, **kwar
         # Chargement depuis MinIO
         response = minio_client.get_object(MINIO_BUCKET_AGGREGATED, object_path)
         df = pl.read_parquet(response.data)
-        logging.info(f"Données {table_name} chargées depuis MinIO : {df.shape}")
+        logging.info(f"Données {table_name} chargées depuis MinIO : {df.shape} , Head : {df.head()}")
 
         # Vérification des colonnes
         missing_cols = [col for col in required_columns[table_name] if col not in df.columns]
@@ -657,9 +652,12 @@ def insert_data_in_dimension_table(table_name: str, unique_columns: list, **kwar
             ON CONFLICT ({conflict_columns}) DO NOTHING
         """
 
+        
         # Exécution batch
         start_count = get_row_count(cursor, table_name)
-        psycopg2.extras.execute_batch(cursor, query, df.rows())
+        # Convert DataFrame rows to list of tuples
+        rows = [tuple(row) for row in df.select(required_columns[table_name]).rows()]
+        extras.execute_batch(cursor, query, rows)
         conn.commit()
 
         # Log des résultats
@@ -675,12 +673,14 @@ def insert_data_in_dimension_table(table_name: str, unique_columns: list, **kwar
         return inserted
 
     except Exception as e:
+        logging.info(f"Data frame : {df.head()}")
         logging.error(f"Erreur lors du chargement de {table_name} : {str(e)}")
         raise
     finally:
         if 'conn' in locals():
             cursor.close()
             conn.close()
+        return "Data inserted in dimension table"
             
             
 def prepare_and_store_dimensions(execution_date: datetime):
@@ -688,25 +688,12 @@ def prepare_and_store_dimensions(execution_date: datetime):
     Prépare les tables de dimensions à partir des données brutes
     et les stocke dans MinIO au format Parquet
     """
-    logger = logging.getLogger(__name__)
     date_str = execution_date.strftime('%Y-%m-%d')
     minio_client = get_minio_client()
-
+    # Load required tables
+   
     # Configuration des dimensions
     dimensions_config = {
-        'dim_time': {
-            'source_tables': ['orders'],
-            'columns': ['date', 'day', 'month', 'year', 'quarter', 'week_of_year', 'is_weekend'],
-            'processing': lambda df: df.select(
-                pl.col('order_date').dt.date().alias('date'),
-                pl.col('order_date').dt.day().alias('day'),
-                pl.col('order_date').dt.month().alias('month'),
-                pl.col('order_date').dt.year().alias('year'),
-                ((pl.col('order_date').dt.month() - 1) // 3 + 1).alias('quarter'),
-                pl.col('order_date').dt.iso_week().alias('week_of_year'),
-                pl.col('order_date').dt.weekday().is_in([5, 6]).alias('is_weekend')
-            ).unique()
-        },
         'dim_geography': {
             'source_tables': ['addresses'],
             'columns': ['country', 'city', 'postal_code'],
@@ -714,38 +701,49 @@ def prepare_and_store_dimensions(execution_date: datetime):
                 'country', 'city', 'postal_code'
             ).unique()
         },
-        'dim_product': {
-            'source_tables': ['products', 'categories'],
-            'columns': ['product_id', 'name', 'category_id', 'category_name', 'price'],
-            'processing': lambda dfs: dfs['products'].join(
-                dfs['categories'], on='category_id'
-            ).select(
-                'product_id', 
-                pl.col('name').alias('product_name'),
-                'category_id',
-                pl.col('name_right').alias('category_name'),
-                'price'
-            )
-        },
         'dim_user': {
             'source_tables': ['users', 'addresses'],
-            'columns': ['user_id', 'registration_date', 'country', 'city'],
-            'processing': lambda dfs: dfs['users'].join(
-                dfs['addresses'], on='user_id'
-            ).select(
-                'user_id',
-                pl.col('created_at').dt.date().alias('registration_date'),
-                pl.col('country').alias('user_country'),
-                pl.col('city').alias('user_city')
-            )
+            'columns': ['user_id', 'registration_date', 'country', 'city', 'email', 'first_name', 'last_name'],
+            'processing': lambda dfs: (
+                dfs['users']
+                .filter(
+                    pl.col('email').is_not_null() &
+                    pl.col('first_name').is_not_null() &
+                    pl.col('last_name').is_not_null()
+                )
+                .join(
+                    dfs['addresses'].select([
+                        'user_id',
+                        'country',
+                        'city'
+                    ]),
+                    on='user_id',
+                    how='left'
+                )
+                .select([
+                    'user_id',
+                    pl.col('created_at').alias('registration_date'),
+                    pl.col('country').fill_null('Unknown'),
+                    pl.col('city').fill_null('Unknown'),
+                    pl.col('email'),
+                    pl.col('first_name'),
+                    pl.col('last_name')
+                ])
+                .filter(
+                    pl.col('user_id').is_not_null()
+                )
+            ).drop_nulls(subset=['email', 'first_name', 'last_name'])
         },
         'dim_payment_method': {
             'source_tables': ['payments'],
-            'columns': ['payment_method_id', 'method_name'],
-            'processing': lambda df: df.select(
-                pl.col('payment_method').unique().alias('method_name')
-            ).with_columns(
-                pl.arange(1, pl.count() + 1).alias('payment_method_id')
+            'columns': ['payment_method_id', 'method_name'],  # Switch order to match table definition
+            'processing': lambda df: (
+                df.select(pl.col('payment_method').alias('method_name'))
+                .unique()
+                .with_columns([
+                    pl.arange(1, pl.count() + 1).cast(pl.Int32).alias('payment_method_id')
+                ])
+                .select('payment_method_id', 'method_name')  # Ensure correct column order
             )
         }
     }
@@ -757,13 +755,13 @@ def prepare_and_store_dimensions(execution_date: datetime):
             for table in dim_cfg['source_tables']:
                 if table not in raw_data:
                     object_path = f"{table}/{date_str}/{table}.parquet"
-                    response = minio_client.get_object('ecommerce-data', object_path)
+                    response = minio_client.get_object(MINIO_BUCKET_RAW, object_path)
                     raw_data[table] = pl.read_parquet(response.data)
-                    logger.info(f"Chargé {table} depuis MinIO - {raw_data[table].shape}")
+                    logging.info(f"Chargé {table} depuis MinIO - {raw_data[table].shape} Head : {raw_data[table].head()}")
 
         # Traiter chaque dimension
         for dim_name, cfg in dimensions_config.items():
-            logger.info(f"Traitement de la dimension {dim_name}...")
+            logging.info(f"Traitement de la dimension {dim_name}...")
             
             # Application du traitement
             if len(cfg['source_tables']) == 1:
@@ -775,6 +773,9 @@ def prepare_and_store_dimensions(execution_date: datetime):
             # Validation des colonnes
             missing_cols = [c for c in cfg['columns'] if c not in df.columns]
             if missing_cols:
+                logging.error(f"Colonnes dans {dim_name} : {df.columns}")
+                logging.info(f"Colonnes requises : {cfg['columns']}")
+                logging.error(f"Colonnes manquantes : {missing_cols}")
                 raise ValueError(f"Colonnes manquantes dans {dim_name}: {missing_cols}")
 
             # Stockage dans MinIO
@@ -790,8 +791,37 @@ def prepare_and_store_dimensions(execution_date: datetime):
                 length=buffer.getbuffer().nbytes,
                 content_type='application/octet-stream'
             )
-            logger.info(f"Dimension {dim_name} sauvegardée dans {object_path}")
+            logging.info(f"Dimension {dim_name} sauvegardée dans {object_path}")
 
     except Exception as e:
-        logger.error(f"Erreur lors de la préparation des dimensions : {str(e)}")
+        logging.error(f"Erreur lors de la préparation des dimensions : {str(e)}")
         raise
+    finally:
+        logging.info("Dimension preparation process completed")
+    
+def dimension_pipeline(**kwargs):
+    execution_date = kwargs['execution_date']
+    prepare_and_store_dimensions(execution_date)
+    return "Dimension pipeline success"
+
+def insert_data_in_dim_tables(**kwargs):
+    # Define unique constraints for each table
+    unique_constraints = {
+        'dim_geography': ['country', 'city', 'postal_code'],
+        'dim_product': ['product_id'],
+        'dim_user': ['user_id'],
+        'dim_payment_method': ['payment_method_id']
+    }
+    
+    tables = ['dim_geography', 'dim_product', 'dim_user', 'dim_payment_method']
+    for table in tables:
+        logging.info(f"Inserting data in {table}")
+        insert_data_in_dimension_table(table, unique_constraints[table], **kwargs)
+        logging.info(f"Data inserted in {table}")
+    logging.info("Data inserted in dimension 'Time'")
+    insert_date_dim(**kwargs)
+    dimension_pipeline
+    logging.info("Data inserted in dimension Time")
+    
+    logging.info("Data inserted in dimension tables")
+    return "Data inserted in dimension tables"

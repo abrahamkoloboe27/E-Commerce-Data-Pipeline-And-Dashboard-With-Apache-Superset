@@ -43,13 +43,6 @@ with DAG(
             )
             extraction_tasks.append(task)
     
-    insert_date_dim = PythonOperator(
-        task_id='insert_date_dim',
-        python_callable=insert_date_dim,
-        provide_context=True,
-        depends_on_past=True
-    )   
-    
     tables = ['categories', 'users', 'addresses', 'products',
               'orders', 'order_items', 'payments', 'shipments',
               'reviews', 'product_views']
@@ -64,12 +57,36 @@ with DAG(
         cleaning_tasks = [
             create_cleaning_task(table) for table in tables
         ]
-    aggregate_daily_data = PythonOperator(
+    # aggregate_daily_data = PythonOperator(
+    #     task_id='aggregate_daily_data',
+    #     python_callable=aggregate_daily_data,
+    #     provide_context=True,
+    #     depends_on_past=True
+    # )
+    with TaskGroup("prepare_data") as prepare_data:
+        # def dimension_pipeline(**kwargs):
+        #     execution_date = kwargs['execution_date']
+        #     prepare_and_store_dimensions(execution_date)
+        prepare_dimensions_task = PythonOperator(
+            task_id='prepare_dimensions',
+            python_callable=dimension_pipeline,
+            provide_context=True
+        )
+        aggregate_daily_data = PythonOperator(
         task_id='aggregate_daily_data',
         python_callable=aggregate_daily_data,
         provide_context=True,
         depends_on_past=True
-    )
+        )
+        prepare_dimensions_task >> aggregate_daily_data
+    with TaskGroup("insert_data_in_data_warehouse") as insert_data_in_data_warehouse:
+         insert_data_in_dimension_table = PythonOperator(
+             task_id='insert_data_in_dimension_table',
+             python_callable=insert_data_in_dim_tables,
+             provide_context=True
+         )
+        
+        
     end_task = EmptyOperator(task_id ='end_task')
     
-    start_task >> extract_data >>cleaning_tasks >>aggregate_daily_data >> insert_date_dim >> end_task
+    start_task >> extract_data >>cleaning_tasks >> prepare_data >> end_task
