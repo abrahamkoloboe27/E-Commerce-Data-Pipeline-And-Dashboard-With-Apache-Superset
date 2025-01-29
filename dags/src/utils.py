@@ -588,7 +588,7 @@ def get_row_count(cursor, table_name):
     cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
     return cursor.fetchone()[0]
     
-def load_dimension_table(table_name: str, unique_columns: list, **kwargs):
+def insert_data_in_dimension_table(table_name: str, unique_columns: list, **kwargs):
     """
     Charge les données d'une table de dimension depuis MinIO
     et les insère dans la base analytique en évitant les doublons
