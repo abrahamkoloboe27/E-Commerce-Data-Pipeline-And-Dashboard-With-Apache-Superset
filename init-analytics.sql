@@ -72,13 +72,7 @@ CREATE TABLE IF NOT EXISTS dim_product (
     price DECIMAL(10,2) NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS dim_user (
-    user_id SERIAL PRIMARY KEY,
-    registration_date DATE NOT NULL,
-    country VARCHAR(100),
-    city VARCHAR(100),
-    acquisition_channel VARCHAR(50)
-);
+
 
 CREATE TABLE IF NOT EXISTS dim_payment_method (
     payment_method_id SERIAL PRIMARY KEY,

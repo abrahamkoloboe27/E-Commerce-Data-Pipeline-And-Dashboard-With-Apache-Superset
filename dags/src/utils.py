@@ -609,6 +609,12 @@ def insert_data_in_dimension_table(table_name: str, unique_columns: list, **kwar
         'dim_user': ['user_id', 'registration_date', 'country', 'city'],
         'dim_payment_method': ['payment_method_id', 'method_name']
     }
+    not_null_columns = {
+    'dim_geography': ['country', 'city', 'postal_code'],
+    'dim_product': ['product_id', 'name', 'category_id', 'category_name', 'price'],
+    'dim_user': ['user_id', 'registration_date', 'country', 'city', 'email', 'first_name', 'last_name'],
+    'dim_payment_method': ['payment_method_id', 'method_name']
+    }
 
     try:
         # Récupération du client MinIO
@@ -624,6 +630,10 @@ def insert_data_in_dimension_table(table_name: str, unique_columns: list, **kwar
         # Chargement depuis MinIO
         response = minio_client.get_object(MINIO_BUCKET_AGGREGATED, object_path)
         df = pl.read_parquet(response.data)
+        logging.info(f"Before drop_nulls - shape: {df.shape}")
+        logging.info(f"Null counts:\n{df.null_count()}")
+        df = df.drop_nulls(subset=not_null_columns[table_name])
+        logging.info(f"After drop_nulls - shape: {df.shape}")
         logging.info(f"Données {table_name} chargées depuis MinIO : {df.shape} , Head : {df.head()}")
 
         # Vérification des colonnes
@@ -652,7 +662,7 @@ def insert_data_in_dimension_table(table_name: str, unique_columns: list, **kwar
             ON CONFLICT ({conflict_columns}) DO NOTHING
         """
 
-        
+
         # Exécution batch
         start_count = get_row_count(cursor, table_name)
         # Convert DataFrame rows to list of tuples
