@@ -593,7 +593,7 @@ def load_dimension_table(table_name: str, unique_columns: list, **kwargs):
     Charge les données d'une table de dimension depuis MinIO
     et les insère dans la base analytique en évitant les doublons
     """
-    logger = logging.getLogger(__name__)
+
     execution_date = kwargs['execution_date']
     date_str = execution_date.strftime('%Y-%m-%d')
 
@@ -629,7 +629,7 @@ def load_dimension_table(table_name: str, unique_columns: list, **kwargs):
         # Chargement depuis MinIO
         response = minio_client.get_object(MINIO_BUCKET_AGGREGATED, object_path)
         df = pl.read_parquet(response.data)
-        logger.info(f"Données {table_name} chargées depuis MinIO : {df.shape}")
+        logging.info(f"Données {table_name} chargées depuis MinIO : {df.shape}")
 
         # Vérification des colonnes
         missing_cols = [col for col in required_columns[table_name] if col not in df.columns]
@@ -665,7 +665,7 @@ def load_dimension_table(table_name: str, unique_columns: list, **kwargs):
         # Log des résultats
         end_count = get_row_count(cursor, table_name)
         inserted = end_count - start_count
-        logger.info(f"""
+        logging.info(f"""
             Chargement {table_name} réussi :
             - Lignes traitées : {len(df)}
             - Nouvelles entrées : {inserted}
@@ -675,7 +675,7 @@ def load_dimension_table(table_name: str, unique_columns: list, **kwargs):
         return inserted
 
     except Exception as e:
-        logger.error(f"Erreur lors du chargement de {table_name} : {str(e)}")
+        logging.error(f"Erreur lors du chargement de {table_name} : {str(e)}")
         raise
     finally:
         if 'conn' in locals():
