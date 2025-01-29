@@ -4,3 +4,4 @@ ml_pipeline.log
 dags/__pycache__/*
 *.pyc
 **__pycache__/*
+dump/*

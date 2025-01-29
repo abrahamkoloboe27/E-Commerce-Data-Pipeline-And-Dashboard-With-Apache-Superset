@@ -4,6 +4,7 @@ import sys
 import polars as pl
 import io
 import logging
+from datetime import datetime, timedelta
 import time
 logging.basicConfig(
         level=logging.INFO,
@@ -18,7 +19,9 @@ logging.basicConfig(
 MINIO_ENDPOINT = "minio:9000"
 MINIO_ACCESS_KEY = "minioadmin"
 MINIO_SECRET_KEY = "minioadmin"
-MINIO_BUCKET = "ecommerce-data"
+MINIO_BUCKET_RAW = "ecommerce-data-raw"
+MINIO_BUCKET_CLEAN = "ecommerce-data-clean"
+MINIO_BUCKET_AGGREGATED = "ecommerce-data-aggregated"
 
 def get_minio_client():
     connection = Minio(
@@ -83,36 +86,598 @@ def extract_table(table_name: str, **kwargs):
         logging.info(f"Uploading {len(df)} records to MinIO")
         
         # Create bucket if it doesn't exist
-        if not minio_client.bucket_exists(MINIO_BUCKET):
-            logging.info(f"Creating bucket {MINIO_BUCKET}")
-            minio_client.make_bucket(MINIO_BUCKET)
+        if not minio_client.bucket_exists(MINIO_BUCKET_RAW):
+            logging.info(f"Creating bucket {MINIO_BUCKET_RAW}")
+            minio_client.make_bucket(MINIO_BUCKET_RAW)
         
         # Define the object path in MinIO
-        object_path = f"{table_name}/{execution_date.strftime('%Y/%m/%d')}/{table_name}.parquet"
+        object_path = f"{table_name}/{execution_date.strftime('%Y-%m-%d')}/{table_name}.parquet"
         logging.info(f"Uploading to {object_path}")
         
         # Upload to MinIO
         try:
             minio_client.put_object(
-                bucket_name=MINIO_BUCKET,
+                bucket_name=MINIO_BUCKET_RAW,
                 object_name=object_path,
                 data=parquet_buffer,
                 length=parquet_buffer.getbuffer().nbytes,
                 content_type='application/octet-stream'
             )
+            #df.write_parquet(f"dump/{table_name}_{execution_date}.parquet")
         except Exception as e:
             time.sleep(5)
             logging.error(f"Connection failed: {e}. Retrying...")
             minio_client = get_minio_client()
             minio_client.put_object(
-                bucket_name=MINIO_BUCKET,
+                bucket_name=MINIO_BUCKET_RAW,
                 object_name=object_path,
                 data=parquet_buffer,
                 length=parquet_buffer.getbuffer().nbytes,
                 content_type='application/octet-stream'
             )
+           # df.write_parquet(f"dump/{table_name}_{execution_date}.parquet")
         logging.info(f"Uploaded {len(df)} records to MinIO")
         
         return f"Extracted and saved {len(df)} records from {table_name}"
     else : 
         return f"No data found for {table_name} on {execution_date}"
+
+def load_data_from_minio(table:str , **kwargs):
+    execution_date = kwargs['execution_date']
+    logging.info(f"Loading data from MinIO for {execution_date}")
+    #table = kwargs['table']
+    minio_client = get_minio_client()
+    object_path = f"{table}/{execution_date.strftime('%Y-%m-%d')}/{table}.parquet"
+    logging.info(f"Loading data from {object_path}")
+    df = pl.read_parquet(minio_client.get_object(MINIO_BUCKET_RAW, object_path))
+    logging.info(f"Loaded table : {table},\n execution_date = {execution_date},\n Data :  {len(df.head())} records from MinIO") 
+    return df
+
+def clean_data(table_name: str, execution_date, **kwargs):
+    """
+    Nettoie les données brutes chargées depuis MinIO
+    Effectue les opérations suivantes :
+    1. Conversion des timestamps en dates
+    2. Gestion des valeurs manquantes
+    3. Suppression des doublons
+    """
+    
+    # Chargement des données depuis MinIO
+    logging.info(f"Début du nettoyage des données pour {table_name}")
+    df = load_data_from_minio(table=table_name, execution_date=execution_date)
+    
+    # Configuration spécifique par table
+    cleaning_config = {
+    'categories': {
+        'mandatory_columns': ['category_id', 'name'],
+        'default_values': {'description': 'No description'},
+        'text_columns': ['name', 'description'],
+        'unique_constraints': ['name']
+    },
+    'users': {
+        'timestamp_columns': ['created_at'],
+        'mandatory_columns': ['user_id', 'email', 'first_name', 'last_name'],
+        'default_values': {'default_address_id': -1},
+        'email_validation': True,
+        'foreign_keys': [('default_address_id', 'addresses', 'address_id')]
+    },
+    'addresses': {
+        'timestamp_columns': ['created_at'],
+        'mandatory_columns': ['address_id', 'user_id', 'country', 'city', 'street'],
+        'default_values': {
+            'postal_code': 'N/A',
+            'is_default': False
+        },
+        'geo_columns': {
+            'city': {'min_length': 2}
+        }
+    },
+    'products': {
+        'timestamp_columns': ['created_at'],
+        'mandatory_columns': ['product_id', 'name', 'price'],
+        'default_values': {'description': 'No description'},
+        'numeric_ranges': {
+            'price': {'min': 0.0, 'replace_negative': 0.0}
+        },
+        'text_columns': ['name', 'description']
+    },
+    'orders': {
+        'timestamp_columns': ['order_date'],
+        'mandatory_columns': ['order_id', 'user_id', 'total_amount'],
+        'drop_columns': ['billing_address_id', 'shipping_address_id'],
+        'numeric_ranges': {
+            'total_amount': {'min': 0.0, 'replace_negative': 0.0}
+        },
+        'status_handling': {
+            'allowed_values': ['pending', 'shipped', 'delivered', 'cancelled'],
+            'default': 'pending'
+        }
+    },
+    'order_items': {
+        'mandatory_columns': ['order_item_id', 'order_id', 'product_id', 'quantity', 'price'],
+        'numeric_ranges': {
+            'quantity': {'min': 1, 'replace_invalid': 1},
+            'price': {'min': 0.0, 'replace_negative': 0.0}
+        },
+        'foreign_keys': [
+            ('order_id', 'orders', 'order_id'),
+            ('product_id', 'products', 'product_id')
+        ]
+    },
+    'payments': {
+        'timestamp_columns': ['payment_date'],
+        'mandatory_columns': ['payment_id', 'order_id', 'amount'],
+        'numeric_ranges': {
+            'amount': {'min': 0.0, 'replace_negative': 0.0}
+        },
+        'payment_method_handling': {
+            'default': 'credit_card'
+        }
+    },
+    'shipments': {
+        'timestamp_columns': ['shipment_date'],
+        'mandatory_columns': ['shipment_id', 'order_id', 'tracking_number'],
+        'default_values': {'status': 'pending'},
+        'status_handling': {
+            'allowed_values': ['pending', 'shipped', 'delivered', 'lost'],
+            'default': 'pending'
+        },
+        'tracking_format': 'XXX-XXXX-XXXX'  # Format exemple
+    },
+    'reviews': {
+        'timestamp_columns': ['review_date'],
+        'mandatory_columns': ['review_id', 'user_id', 'product_id', 'rating'],
+        'default_values': {'comment': 'No comment'},
+        'rating_handling': {
+            'min': 1,
+            'max': 5,
+            'replace_outliers': 3
+        },
+        'text_analysis': ['comment']
+    },
+    'product_views': {
+        'timestamp_columns': ['view_date'],
+        'mandatory_columns': ['view_id', 'user_id', 'product_id'],
+        'session_handling': {
+            'inactivity_threshold': '30m',
+            'max_duration': '2h'
+        }
+    }
+    }
+
+    # 1. Conversion des timestamps
+    config = cleaning_config.get(table_name, {})
+    for col in config.get('timestamp_columns', []):
+        if col in df.columns:
+            df = df.with_columns(
+                pl.col(col).dt.date().alias(f"{col}"),
+                pl.col(col).dt.time().alias(f"{col}_time")
+            )
+            #df = df.drop(col)
+            logging.info(f"Converti {col} en date/heure pour {table_name}")
+
+    # 2. Gestion des valeurs manquantes
+    # Suppression des lignes avec des colonnes obligatoires manquantes
+    if 'mandatory_columns' in config:
+        initial_count = len(df)
+        df = df.drop_nulls(subset=config['mandatory_columns'])
+        logging.info(f"Supprimé {initial_count - len(df)} lignes avec valeurs manquantes critiques")
+
+    # Remplacement des valeurs par défaut
+    for col, value in config.get('default_values', {}).items():
+        if col in df.columns:
+            null_count = df[col].is_null().sum()
+            df = df.with_columns(pl.col(col).fill_null(value))
+            logging.info(f"Remplacé {null_count} valeurs manquantes dans {col} par {value}")
+
+    # 3. Suppression des doublons
+    initial_count = len(df)
+    df = df.unique()
+    logging.info(f"Supprimé {initial_count - len(df)} doublons")
+
+    # Nettoyage spécifique pour les montants financiers
+    if config.get('amount_handling', False):
+        df = df.with_columns(
+            pl.col('amount').round(2)
+        )
+        logging.info("Arrondi des montants financiers à 2 décimales")
+
+    # Gestion des colonnes inutiles
+    for col in config.get('drop_columns', []):
+        if col in df.columns:
+            df = df.drop(col)
+            logging.info(f"Colonne {col} supprimée")
+
+    logging.info(f"Nettoyage terminé pour {table_name}. Forme finale : {df.shape}")
+    
+    
+    # Convert to parquet bytes
+    parquet_buffer = io.BytesIO()
+    logging.info(f"Writing {len(df)} records to parquet")
+    df.write_parquet(parquet_buffer)
+    logging.info(f"Finished writing {len(df)} records to parquet")
+    parquet_buffer.seek(0)
+    
+    # Enregistrement des données nettoyées dans MinIO
+    logging.info(f"Enregistrement des données nettoyées pour {table_name}")
+    minio_client = get_minio_client()
+    if not minio_client.bucket_exists(MINIO_BUCKET_CLEAN):
+        logging.info(f"Creating bucket {MINIO_BUCKET_CLEAN}")
+        minio_client.make_bucket(MINIO_BUCKET_CLEAN)
+            
+    # Define the object path in MinIO
+    object_path = f"{table_name}/{execution_date.strftime('%Y-%m-%d')}/{table_name}.parquet"
+    logging.info(f"Uploading to {object_path}")
+        
+    # Upload to MinIO
+    try:
+        minio_client.put_object(
+                bucket_name=MINIO_BUCKET_CLEAN,
+                object_name=object_path,
+                data=parquet_buffer,
+                length=parquet_buffer.getbuffer().nbytes,
+                content_type='application/octet-stream'
+            )
+        #df.write_parquet(f"dump/{table_name}_{execution_date}.parquet")
+    except Exception as e:
+        time.sleep(5)
+        logging.error(f"Connection failed: {e}. Retrying...")
+        minio_client = get_minio_client()
+        minio_client.put_object(
+                bucket_name=MINIO_BUCKET_CLEAN,
+                object_name=object_path,
+                data=parquet_buffer,
+                length=parquet_buffer.getbuffer().nbytes,
+                content_type='application/octet-stream'
+            )
+        #df.write_parquet(f"dump/{table_name}_{execution_date}.parquet")
+        logging.info(f"Uploaded {len(df.head())} records to MinIO")
+    return "Data cleaned and saved to MinIO"
+
+
+
+
+def insert_date_dim(**kwargs):
+    execution_date = kwargs['execution_date']
+    logging.info(f"Inserting date dimension for {execution_date}")
+    date = execution_date.strftime('%Y-%m-%d')
+    day = execution_date.day
+    month = execution_date.month
+    year = execution_date.year
+    quarter = (execution_date.month - 1) // 3 + 1
+    is_weekend = execution_date.weekday() in [5, 6]
+    week_of_year = execution_date.isocalendar()[1]
+    
+    
+    # Connect to PostgreSQL
+    postgres_connection =  psycopg2.connect(
+            dbname="ecommerce_metrics",
+            user="postgres",
+            password="postgres",
+            host="postgres-etl",
+            port="5432"
+        )
+    # Get the last id in the date dimension
+    cursor = postgres_connection.cursor()
+    cursor.execute("SELECT MAX(time_id) FROM dim_time")
+    last_id = cursor.fetchone()[0]
+    logging.info(f"Last ID in date dimension: {last_id}")
+    if last_id is None:
+        last_id = 0
+    else:
+        last_id += 1
+    # Insert into date dimension
+    logging.info(f""" Try to insert date dimension for {execution_date} :\n last_id : {last_id} \n""")
+    cursor.execute(f"""
+        INSERT INTO dim_time (time_id, date, day, month, year, quarter, week_of_year, is_weekend)
+        VALUES ({last_id}, '{date}', {day}, {month}, {year}, {quarter}, {week_of_year}, {is_weekend})
+    """)
+    logging.info(f"""Inserted date dimension for {execution_date} :\n last_id : {last_id} 
+                 \n date : {date} \n day : {day} \n month : {month} \n year : {year}
+                 \n quarter : {quarter} \n week_of_year : {week_of_year} \n is_weekend : {is_weekend}""")
+    postgres_connection.commit()
+    logging.info(f"Inserted date dimension for {execution_date}")
+    
+    
+def insert_dim_geography(**kwargs) : 
+    execution_date = kwargs['execution_date']
+    
+    
+    
+
+
+
+def aggregate_daily_data(**kwargs):
+    """
+    Agrège les données au pas de temps journalier et les enregistre dans MinIO.
+    """    
+    # Charger les données brutes depuis MinIO
+    execution_date = kwargs['execution_date']
+    logging.info(f"Début de l'agrégation des données pour {execution_date}")
+    minio_client = get_minio_client()
+    date_str = execution_date.strftime('%Y-%m-%d')
+    
+    # Charger les tables nécessaires
+    tables = {
+        'orders': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'orders/{date_str}/orders.parquet')),
+        'order_items': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'order_items/{date_str}/order_items.parquet')),
+        'users': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'users/{date_str}/users.parquet')),
+        'addresses': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'addresses/{date_str}/addresses.parquet')),
+        'products': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'products/{date_str}/products.parquet')),
+        'payments': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'payments/{date_str}/payments.parquet')),
+        'product_views': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'product_views/{date_str}/product_views.parquet')),
+        'reviews': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'reviews/{date_str}/reviews.parquet')),
+        'shipments': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'shipments/{date_str}/shipments.parquet')),
+    }
+    
+    logging.info("Calcul des agrégations...")
+    # Showing head of tables 
+    for table_name, df in tables.items():
+        logging.info(f"Table {table_name} shape: {df.shape} \n {df.head()}")
+    # Préparation des données de paiement avec user_id
+    payments_with_users = (
+        tables['payments']
+        .join(tables['orders'], on='order_id')
+        .select(['user_id', 'amount', 'payment_method', 'payment_date', 'order_id', 'order_date'])
+    )
+    logging.info(f"Payments with users shape: {payments_with_users.shape} \n {payments_with_users.head()}")
+    
+    # 1. Fact Sales
+    fact_sales = tables['orders']
+    logging.info(f"Initial orders: {fact_sales.shape[0]} lignes")
+    
+    fact_sales = (
+        fact_sales
+        .join(tables['order_items'], on='order_id', how='left')
+        .join(tables['shipments'], on='order_id', how='left')
+        .join(payments_with_users, on='order_id', how='left')
+        .join(tables['users'], on='user_id', how='left')
+        .join(
+            tables['addresses'], 
+            on='user_id', 
+            how='left'
+        )
+        .join(tables['products'], on='product_id', how='left')
+        .group_by([
+            'order_date', 
+            'product_id', 
+            'user_id', 
+            'country', 
+            'city', 
+            'payment_method'
+        ])
+        .agg([
+            pl.sum('quantity').alias('quantity'),
+            pl.sum('amount').alias('revenue'),
+            pl.first('status').alias('order_status'),
+            (
+                pl.col('shipment_date').dt.epoch("s") 
+                - pl.col('order_date').dt.epoch("s")
+            ).alias('delivery_time_seconds')
+        ])
+        .with_columns(pl.col('order_date').dt.date().alias('date'))
+    )
+    logging.info(f"Fact Sales final: {fact_sales.shape[0]} lignes")
+    
+    logging.info(f"Initial Users: {tables['users'].shape[0]} lignes")
+    # 2. Fact User Activity
+    fact_user_activity = (
+        tables['users']
+        .join(
+            tables['addresses'].filter(pl.col('is_default') == True), 
+            on='user_id', 
+            how='left'
+        )
+        .join(
+            tables['product_views']
+            .group_by('user_id')
+            .agg(pl.count().alias('product_views')), 
+            on='user_id', 
+            how='left'
+        )
+        .join(
+            tables['orders']
+            .group_by('user_id')
+            .agg(pl.count().alias('purchases')), 
+            on='user_id', 
+            how='left'
+        )
+        .join(
+            payments_with_users  # Utilisation de payments_with_users ici
+            .group_by('user_id')
+            .agg(pl.sum('amount').alias('cltv')), 
+            on='user_id', 
+            how='left'
+        )
+        .with_columns([
+            (pl.col('created_at').dt.date() < execution_date.date() - timedelta(days=30))
+            .alias('retention_status'),
+            pl.col('product_views').fill_null(0),
+            pl.col('purchases').fill_null(0),
+            pl.col('cltv').fill_null(0)
+        ])
+    )
+    logging.info(f"Fact User Activity: {fact_user_activity.shape[0]} lignes")
+    
+    # 3. Fact Product Performance
+    logging.info(f"Initial Products: {tables['products'].shape[0]} lignes")
+    fact_product_performance = (
+        tables['products']
+        .join(
+            tables['product_views']
+            .group_by('product_id')
+            .agg(pl.count().alias('views')), 
+            on='product_id', 
+            how='left'
+        )
+        .join(
+            tables['order_items']
+            .group_by('product_id')
+            .agg(pl.sum('quantity').alias('purchases')), 
+            on='product_id', 
+            how='left'
+        )
+        .join(
+            tables['reviews']
+            .group_by('product_id')
+            .agg(pl.mean('rating').alias('average_rating')), 
+            on='product_id', 
+            how='left'
+        )
+        .with_columns([
+            pl.col('views').fill_null(0),
+            pl.col('purchases').fill_null(0),
+            pl.col('average_rating').fill_null(0),
+            (pl.col('purchases') / pl.when(pl.col('views') > 0)
+             .then(pl.col('views'))
+             .otherwise(1))
+            .alias('conversion_rate')
+        ])
+    )
+    logging.info(f"Fact Product Performance: {fact_product_performance.shape[0]} lignes")
+    
+    # 4. Fact Payment Analytics
+    logging.info(f"Initial Payments: {payments_with_users.shape[0]} lignes")
+    fact_payment_analytics = (
+        payments_with_users  # Utilisation de payments_with_users ici aussi
+        .group_by(['payment_method', 'payment_date'])
+        .agg([
+            pl.count().alias('transaction_count'),
+            (pl.col('amount') > 0).mean().alias('success_rate'),
+            (pl.col('payment_date').dt.epoch('s') - pl.col('order_date').dt.epoch('s'))
+            .mean()
+            .alias('avg_processing_time')
+        ])
+        .with_columns(pl.col('payment_date').dt.date().alias('date'))
+    )
+    logging.info(f"Fact Payment Analytics: {fact_payment_analytics.shape[0]} lignes")
+    
+    # Enregistrement des données agrégées dans MinIO
+    logging.info("Enregistrement des données agrégées dans MinIO...")
+    
+    for table_name, df in {
+        'fact_sales': fact_sales,
+        'fact_user_activity': fact_user_activity,
+        'fact_product_performance': fact_product_performance,
+        'fact_payment_analytics': fact_payment_analytics
+    }.items():
+        parquet_buffer = io.BytesIO()
+        df.write_parquet(parquet_buffer)
+        parquet_buffer.seek(0)
+        
+        if not minio_client.bucket_exists(MINIO_BUCKET_AGGREGATED):
+            minio_client.make_bucket(MINIO_BUCKET_AGGREGATED)
+            logging.info(f"Création du bucket {MINIO_BUCKET_AGGREGATED}")
+        
+        object_path = f"{table_name}/{date_str}/{table_name}.parquet"
+        minio_client.put_object(
+            bucket_name=MINIO_BUCKET_AGGREGATED,
+            object_name=object_path,
+            data=parquet_buffer,
+            length=parquet_buffer.getbuffer().nbytes,
+            content_type='application/octet-stream'
+        )
+        logging.info(f"Données {table_name} enregistrées dans {object_path}, Head : {df.head()}")
+        
+    
+    logging.info(f"Agrégation terminée pour {execution_date}")
+    
+
+def get_row_count(cursor, table_name):
+    """Récupère le nombre de lignes actuel dans la table"""
+    cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+    return cursor.fetchone()[0]
+    
+def load_dimension_table(table_name: str, unique_columns: list, **kwargs):
+    """
+    Charge les données d'une table de dimension depuis MinIO
+    et les insère dans la base analytique en évitant les doublons
+    """
+    logger = logging.getLogger(__name__)
+    execution_date = kwargs['execution_date']
+    date_str = execution_date.strftime('%Y-%m-%d')
+
+    # Configuration des chemins MinIO
+    minio_paths = {
+        'dim_time': f"dim_time/{date_str}/dim_time.parquet",
+        'dim_geography': f"dim_geography/{date_str}/dim_geography.parquet",
+        'dim_product': f"dim_product/{date_str}/dim_product.parquet",
+        'dim_user': f"dim_user/{date_str}/dim_user.parquet",
+        'dim_payment_method': f"dim_payment_method/{date_str}/dim_payment_method.parquet"
+    }
+
+    # Configuration des colonnes obligatoires
+    required_columns = {
+        'dim_time': ['date', 'day', 'month', 'year', 'quarter', 'week_of_year', 'is_weekend'],
+        'dim_geography': ['country', 'city', 'postal_code'],
+        'dim_product': ['product_id', 'name', 'category_id', 'category_name', 'price'],
+        'dim_user': ['user_id', 'registration_date', 'country', 'city'],
+        'dim_payment_method': ['payment_method_id', 'method_name']
+    }
+
+    try:
+        # Récupération du client MinIO
+        minio_client = get_minio_client()
+        
+        # Récupération du chemin de l'objet
+        object_path = minio_paths[table_name]
+        
+        # Vérification de l'existence du fichier
+        if not minio_client.stat_object(MINIO_BUCKET_AGGREGATED, object_path):
+            raise FileNotFoundError(f"Fichier {object_path} non trouvé dans MinIO")
+
+        # Chargement depuis MinIO
+        response = minio_client.get_object(MINIO_BUCKET_AGGREGATED, object_path)
+        df = pl.read_parquet(response.data)
+        logger.info(f"Données {table_name} chargées depuis MinIO : {df.shape}")
+
+        # Vérification des colonnes
+        missing_cols = [col for col in required_columns[table_name] if col not in df.columns]
+        if missing_cols:
+            raise ValueError(f"Colonnes manquantes dans {table_name}: {missing_cols}")
+
+        # Connexion à PostgreSQL
+        conn = psycopg2.connect(
+            dbname="ecommerce_metrics",
+            user="postgres",
+            password="postgres",
+            host="postgres-etl",
+            port="5432"
+        )
+        cursor = conn.cursor()
+
+        # Construction de la requête d'insertion
+        columns = ', '.join(required_columns[table_name])
+        placeholders = ', '.join(['%s'] * len(required_columns[table_name]))
+        conflict_columns = ', '.join(unique_columns)
+
+        query = f"""
+            INSERT INTO {table_name} ({columns})
+            VALUES ({placeholders})
+            ON CONFLICT ({conflict_columns}) DO NOTHING
+        """
+
+        # Exécution batch
+        start_count = get_row_count(cursor, table_name)
+        psycopg2.extras.execute_batch(cursor, query, df.rows())
+        conn.commit()
+
+        # Log des résultats
+        end_count = get_row_count(cursor, table_name)
+        inserted = end_count - start_count
+        logger.info(f"""
+            Chargement {table_name} réussi :
+            - Lignes traitées : {len(df)}
+            - Nouvelles entrées : {inserted}
+            - Doublons ignorés : {len(df) - inserted}
+        """)
+
+        return inserted
+
+    except Exception as e:
+        logger.error(f"Erreur lors du chargement de {table_name} : {str(e)}")
+        raise
+    finally:
+        if 'conn' in locals():
+            cursor.close()
+            conn.close()
