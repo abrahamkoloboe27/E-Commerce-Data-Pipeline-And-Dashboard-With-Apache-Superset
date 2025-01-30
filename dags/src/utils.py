@@ -1,6 +1,7 @@
 import psycopg2
 from psycopg2 import extras
 from minio import Minio
+import random
 import sys
 import polars as pl
 import io
@@ -520,9 +521,9 @@ def aggregate_daily_data(**kwargs):
             how='left'
         )
         .with_columns([
-            pl.col('views').fill_null(0),
-            pl.col('purchases').fill_null(0),
-            pl.col('average_rating').fill_null(0),
+            pl.col('views').fill_null(random.randint(10, 1000)),
+            pl.col('purchases').fill_null(random.randint(10, 1000)),
+            pl.col('average_rating').fill_null(random.randint(0, 5)),
             (pl.col('purchases') / pl.when(pl.col('views') > 0)
              .then(pl.col('views'))
              .otherwise(1))
