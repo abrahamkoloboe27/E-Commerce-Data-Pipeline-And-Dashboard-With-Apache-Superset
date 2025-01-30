@@ -68,23 +68,29 @@ with DAG(
         #     execution_date = kwargs['execution_date']
         #     prepare_and_store_dimensions(execution_date)
         prepare_dimensions_task = PythonOperator(
-            task_id='prepare_dimensions',
+            task_id='prepare_dimensions_tables',
             python_callable=dimension_pipeline,
             provide_context=True
         )
         aggregate_daily_data = PythonOperator(
-        task_id='aggregate_daily_data',
+        task_id='prepare_fact_tables',
         python_callable=aggregate_daily_data,
         provide_context=True,
         depends_on_past=True
         )
         prepare_dimensions_task >> aggregate_daily_data
     with TaskGroup("insert_data_in_data_warehouse") as insert_data_in_data_warehouse:
-         insert_data_in_dimension_table = PythonOperator(
+        insert_data_in_dimension_table = PythonOperator(
              task_id='insert_data_in_dimension_table',
              python_callable=insert_data_in_dim_tables,
              provide_context=True
          )
+        insert_data_in_fact_table = PythonOperator(
+             task_id='insert_data_in_fact_table',
+             python_callable=fact_pipeline,
+             provide_context=True
+         )
+        insert_data_in_dimension_table >> insert_data_in_fact_table
         
         
     end_task = EmptyOperator(task_id ='end_task')
