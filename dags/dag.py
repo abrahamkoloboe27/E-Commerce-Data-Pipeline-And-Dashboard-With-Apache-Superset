@@ -9,7 +9,7 @@ default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
     'catchup': True,
-    'start_date': datetime(2025, 1, 10),
+    'start_date': datetime(2024, 10, 23),
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 1,
@@ -23,7 +23,7 @@ tables = [
     'payments','shipments','reviews','product_views'    ]
 
 with DAG(
-    'ecommerce_metrics_dag',
+    'ecommerce_metrics_dag-v1.0.0',
     default_args=default_args,
     schedule_interval='@daily',
     max_active_runs=3,

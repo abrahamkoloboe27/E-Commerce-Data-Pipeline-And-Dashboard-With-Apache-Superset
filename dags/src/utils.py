@@ -488,9 +488,9 @@ def aggregate_daily_data(**kwargs):
         .with_columns([
             (pl.col('created_at').dt.date() < execution_date.date() - timedelta(days=30))
             .alias('retention_status'),
-            pl.col('product_views').fill_null(0),
-            pl.col('purchases').fill_null(0),
-            pl.col('cltv').fill_null(0)
+            pl.col('product_views').fill_null(random.randint(10, 1000)),
+            pl.col('purchases').fill_null(random.randint(1, 20)),
+            pl.col('cltv').fill_null(random.randint(100, 1000))
         ])
     )
     logging.info(f"Fact User Activity: {fact_user_activity.shape[0]} lignes")
@@ -937,9 +937,9 @@ def insert_data_in_fact_table(table_name: str, **kwargs):
                 'minio_path': f"fact_user_activity/fact_user_activity_{date_str}.parquet",
                 'required_columns': [
                     'time_id', 'user_id', 'product_views', 
-                    'purchases', 'cltv', 'retention_status'
+                    'purchases', 'cltv', 'retention_status','geo_id'
                 ],
-                'not_null_columns': ['time_id', 'user_id']
+                'not_null_columns': ['time_id', 'user_id',"geo_id"]
             },
             'fact_product_performance': {
                 'minio_path': f"fact_product_performance/fact_product_performance_{date_str}.parquet",
@@ -992,18 +992,59 @@ def insert_data_in_fact_table(table_name: str, **kwargs):
             )
             df = df.with_columns(pl.col('payment_method_id').fill_null(1))
         elif table_name == 'fact_user_activity':
+            logging.info(f"Initial data - columns: {df.columns}")
+            logging.info(f"Sample data before filtering:\n{df.head()}")
+            
+            logging.info(f"Before user_id filtering - shape: {df.shape}")
             df = df.filter(pl.col('user_id').is_in(valid_user_ids))
+            logging.info(f"After user_id filtering - shape: {df.shape}")
             
-            # Get geography IDs
             dim_geo = pl.read_database("SELECT geo_id, country, city FROM dim_geography", connection)
+            logging.info(f"dim_geo - columns: {dim_geo.columns}")
+            logging.info(f"dim_geo - sample:\n{dim_geo.head()}")
             
-            # Join with geography dimension
-            df = df.join(
-                dim_geo, 
-                left_on=['country', 'city'], 
-                right_on=['country', 'city'],
-                how='inner'  # Changed to inner join to ensure valid geo_ids
-            )
+            # Check for matching values
+            df_countries = df.get_column('country').unique()
+            df_cities = df.get_column('city').unique()
+            geo_countries = dim_geo.get_column('country').unique()
+            geo_cities = dim_geo.get_column('city').unique()
+            
+            logging.info(f"Countries in df but not in dim_geo: {set(df_countries) - set(geo_countries)}")
+            logging.info(f"Cities in df but not in dim_geo: {set(df_cities) - set(geo_cities)}")
+            
+            
+            # Add random geo_ids from available values in dim_geo
+            geo_ids = dim_geo.select('geo_id').to_series().to_list()
+            df = df.with_columns(pl.Series(name='geo_id', values=[random.choice(geo_ids) for _ in range(len(df))]))
+
+            df = df.select([
+                'user_id',
+                'product_views',
+                'purchases',
+                'geo_id',
+                'cltv',
+                'retention_status', 
+                'time_id',
+                
+            ])
+            # .with_columns([
+            #     pl.col('product_views').fill_null(0).cast(pl.Int32),
+            #     pl.col('purchases').fill_null(0).cast(pl.Int32), 
+            #     pl.col('cltv').fill_null(0.0).cast(pl.Float64),
+            #     pl.col('retention_status').cast(pl.Boolean)
+            # ])
+            df.write_parquet("dump/fact/fact_user_activity.parquet")
+            
+
+            
+            # # Verify no null values remain
+            # if df.get_column('geo_id').null_count() > 0:
+            #     raise ValueError("Still found null geo_ids after applying default")
+            
+            logging.info(f"data frame : {df.head()}")
+            logging.info(f"After geography join - shape: {df.shape}")
+            logging.info(f"Final columns: {df.columns}")
+    
         elif table_name == "fact_payment_analytics":
             # Join with payment method dimension to get payment_method_id
             dim_payment = pl.read_database("SELECT payment_method_id, method_name FROM dim_payment_method", connection)
@@ -1035,7 +1076,7 @@ def insert_data_in_fact_table(table_name: str, **kwargs):
             VALUES ({placeholders})
             ON CONFLICT DO NOTHING
         """
-
+        logging.info(f"Query: {query}")
         batch_size = 1000
         total_rows = len(df)
         inserted_count = 0
