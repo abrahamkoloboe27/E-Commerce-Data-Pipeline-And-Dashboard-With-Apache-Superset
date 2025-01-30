@@ -889,7 +889,17 @@ def insert_data_in_fact_table(table_name: str, **kwargs):
 
     execution_date = kwargs['execution_date']
     date_str = execution_date.strftime('%Y-%m-%d')
-
+    connection = psycopg2.connect(
+        dbname="ecommerce_metrics",
+        user="postgres",
+        password="postgres",
+        host="postgres-etl",
+        port="5432"
+    )
+    cursor = connection.cursor()
+    query = f"SELECT id FROM dim_time WHERE date = '{date_str}'"
+    cursor.execute(query)
+    time_id = cursor.fetchone()[0]
     # Configuration spécifique aux faits
     fact_config = {
         'fact_sales': {
@@ -939,6 +949,7 @@ def insert_data_in_fact_table(table_name: str, **kwargs):
         # Chargement depuis MinIO
         response = minio_client.get_object(MINIO_BUCKET_AGGREGATED, config['minio_path'])
         df = pl.read_parquet(response.data)
+        df["time_id"] = time_id
         
         # Nettoyage des données
         df = df.drop_nulls(subset=config['not_null_columns'])
