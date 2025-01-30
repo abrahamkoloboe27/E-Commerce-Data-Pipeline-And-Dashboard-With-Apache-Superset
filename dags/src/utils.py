@@ -897,15 +897,16 @@ def insert_data_in_fact_table(table_name: str, **kwargs):
         port="5432"
     )
     cursor = connection.cursor()
-    query = f"SELECT id FROM dim_time WHERE date = '{date_str}'"
+    query = f"SELECT time_id FROM dim_time WHERE date = '{date_str}'"
     cursor.execute(query)
     time_id = cursor.fetchone()[0]
+    logging.info(f"Time ID for {date_str}: {time_id}")
     # Configuration spécifique aux faits
     fact_config = {
         'fact_sales': {
             'minio_path': f"fact_sales/fact_sales_{date_str}.parquet",
             'required_columns': [
-                'time_id', 'product_id', 'user_id', 'geography_id',
+                'time_id', 'product_id', 'user_id', 'geo_id',
                 'payment_method_id', 'quantity', 'revenue', 'order_status'
             ],
             'not_null_columns': [
@@ -949,15 +950,44 @@ def insert_data_in_fact_table(table_name: str, **kwargs):
         # Chargement depuis MinIO
         response = minio_client.get_object(MINIO_BUCKET_AGGREGATED, config['minio_path'])
         df = pl.read_parquet(response.data)
-        df["time_id"] = time_id
+        df = df.with_columns(pl.lit(time_id).alias("time_id"))
         
         # Nettoyage des données
         df = df.drop_nulls(subset=config['not_null_columns'])
+        logging.info(f"Data loaded for {table_name} - shape: {df.shape} , Head : {df.head()}")
         
-        # Vérification intégrité des clés étrangères
-        if 'geography_id' in df.columns:
-            dim_geo = pl.read_database("SELECT geography_id FROM dim_geography", postgres_conn)
-            df = df.filter(pl.col('geography_id').is_in(dim_geo['geography_id']))
+        # Get geography and payment method IDs
+        if table_name == 'fact_sales':
+            # Join with dim_geography to get geo_id
+            dim_geo = pl.read_database("SELECT geo_id, country, city FROM dim_geography", connection)
+            dim_product = pl.read_database("SELECT product_id FROM dim_product", connection)
+            
+            # First filter out products that don't exist in dim_product
+            df = df.join(
+                dim_product,
+                on='product_id',
+                how='inner'
+            )
+            
+            # Then join with geography dimension
+            df = df.join(
+                dim_geo, 
+                left_on=['country', 'city'], 
+                right_on=['country', 'city'],
+                how='left'
+            )
+            
+            # Join with dim_payment_method to get payment_method_id and handle missing values
+            dim_payment = pl.read_database("SELECT payment_method_id, method_name FROM dim_payment_method", connection)
+            df = df.join(
+                dim_payment,
+                left_on='payment_method',
+                right_on='method_name',
+                how='left'
+            )
+            # Replace null payment_method_id with default value 1 (assuming 1 is your default payment method)
+            df = df.with_columns(pl.col('payment_method_id').fill_null(1))
+            logging.info(f"Added foreign keys - shape: {df.shape}, Head: {df.head()}")
         
         # Validation des colonnes
         missing_cols = [col for col in config['required_columns'] if col not in df.columns]
