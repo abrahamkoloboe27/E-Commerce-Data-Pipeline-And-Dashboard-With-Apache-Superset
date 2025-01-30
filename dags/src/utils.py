@@ -951,10 +951,10 @@ def insert_data_in_fact_table(table_name: str, **kwargs):
             'fact_payment_analytics': {
                 'minio_path': f"fact_payment_analytics/fact_payment_analytics_{date_str}.parquet",
                 'required_columns': [
-                    'payment_method', 'payment_date', 'transaction_count',
-                    'success_rate', 'avg_processing_time'  
+                    'payment_method_id', 'transaction_count',
+                    'success_rate', 'avg_processing_time', 'time_id'  
                 ],
-                'not_null_columns': ['payment_method', 'payment_date']
+                'not_null_columns': ['payment_method_id', 'payment_date']
             }
         }
 
@@ -970,7 +970,6 @@ def insert_data_in_fact_table(table_name: str, **kwargs):
         if table_name == 'fact_sales':
             df = df.filter(pl.col('user_id').is_in(valid_user_ids))
             df = df.filter(pl.col('product_id').is_in(valid_product_ids))
-            
             # Get geography and payment method IDs
             dim_geo = pl.read_database("SELECT geo_id, country, city FROM dim_geography", connection)
             dim_payment = pl.read_database("SELECT payment_method_id, method_name FROM dim_payment_method", connection)
@@ -991,7 +990,31 @@ def insert_data_in_fact_table(table_name: str, **kwargs):
                 how='left'
             )
             df = df.with_columns(pl.col('payment_method_id').fill_null(1))
-
+        elif table_name == 'fact_user_activity':
+            df = df.filter(pl.col('user_id').is_in(valid_user_ids))
+            
+            # Get geography IDs
+            dim_geo = pl.read_database("SELECT geo_id, country, city FROM dim_geography", connection)
+            
+            # Join with geography dimension
+            df = df.join(
+                dim_geo, 
+                left_on=['country', 'city'], 
+                right_on=['country', 'city'],
+                how='inner'  # Changed to inner join to ensure valid geo_ids
+            )
+        elif table_name == "fact_payment_analytics":
+            # Join with payment method dimension to get payment_method_id
+            dim_payment = pl.read_database("SELECT payment_method_id, method_name FROM dim_payment_method", connection)
+            df = df.join(
+                dim_payment,
+                left_on='payment_method',
+                right_on='method_name',
+                how='inner'
+            )
+        elif table_name == "fact_product_performance":
+            df = df.filter(pl.col('product_id').is_in(valid_product_ids))
+            
         logging.info(f"Data loaded and filtered for {table_name} - shape: {df.shape}")
         
         # Nettoyage des données
