@@ -26,9 +26,9 @@ with DAG(
     'ecommerce_metrics_dag-v1.0.0',
     default_args=default_args,
     schedule_interval='@daily',
-    max_active_runs=3,
+    max_active_runs=5,
     tags=['ecommerce', 'data-pipeline'],
-    concurrency=3,      # limite à 10 tâches en parallèle pour ce DAG
+    concurrency=5,     
     ) as dag:
     start_task = EmptyOperator(task_id = 'start_task')
     # Create extraction tasks for each table

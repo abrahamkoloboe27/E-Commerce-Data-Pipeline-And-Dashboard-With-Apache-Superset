@@ -131,7 +131,12 @@ def load_data_from_minio(table:str , **kwargs):
     minio_client = get_minio_client()
     object_path = f"{table}/{table}_{execution_date.strftime('%Y-%m-%d')}.parquet"
     logging.info(f"Loading data from {object_path}")
-    df = pl.read_parquet(minio_client.get_object(MINIO_BUCKET_RAW, object_path))
+    try:
+        df = pl.read_parquet(minio_client.get_object(MINIO_BUCKET_RAW, object_path))
+    except Exception as e:
+        logging.error(f"Error while loading data from MinIO : {e}")
+        df = pl.DataFrame()
+        return df.is_empty()
     logging.info(f"Loaded table : {table},\n execution_date = {execution_date},\n Data :  {len(df.head())} records from MinIO") 
     return df
 
@@ -147,7 +152,8 @@ def clean_data(table_name: str, execution_date, **kwargs):
     # Chargement des données depuis MinIO
     logging.info(f"Début du nettoyage des données pour {table_name}")
     df = load_data_from_minio(table=table_name, execution_date=execution_date)
-    
+    if type(df) == bool:
+        return "No data found for {table_name} on {execution_date}"
     # Configuration spécifique par table
     cleaning_config = {
     'categories': {
@@ -392,24 +398,28 @@ def aggregate_daily_data(**kwargs):
     logging.info(f"Début de l'agrégation des données pour {execution_date}")
     minio_client = get_minio_client()
     date_str = execution_date.strftime('%Y-%m-%d')
-    
-    # Charger les tables nécessaires
-    tables = {
-        'orders': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'orders/orders_{date_str}.parquet')),
-        'order_items': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'order_items/order_items_{date_str}.parquet')),
-        'users': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'users/users_{date_str}.parquet')),
-        'addresses': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'addresses/addresses_{date_str}.parquet')),
-        'products': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'products/products_{date_str}.parquet')),
-        'payments': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'payments/payments_{date_str}.parquet')),
-        'product_views': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'product_views/product_views_{date_str}.parquet')),
-        'reviews': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'reviews/reviews_{date_str}.parquet')),
-        'shipments': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'shipments/shipments_{date_str}.parquet')),
-    }
+    try : 
+        # Charger les tables nécessaires
+        tables = {
+            'orders': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'orders/orders_{date_str}.parquet')),
+            'order_items': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'order_items/order_items_{date_str}.parquet')),
+            'users': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'users/users_{date_str}.parquet')),
+            'addresses': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'addresses/addresses_{date_str}.parquet')),
+            'products': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'products/products_{date_str}.parquet')),
+            'payments': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'payments/payments_{date_str}.parquet')),
+            'product_views': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'product_views/product_views_{date_str}.parquet')),
+            'reviews': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'reviews/reviews_{date_str}.parquet')),
+            'shipments': pl.read_parquet(minio_client.get_object(MINIO_BUCKET_CLEAN, f'shipments/shipments_{date_str}.parquet')),
+        }
+    except Exception as e:
+        logging.error(f"Error while loading data from MinIO : {e}")
+        return f"The data for {execution_date} is not available in MinIO"
     
     logging.info("Calcul des agrégations...")
     # Showing head of tables 
     for table_name, df in tables.items():
         logging.info(f"Table {table_name} shape: {df.shape} \n {df.head()}")
+            
     # Préparation des données de paiement avec user_id
     payments_with_users = (
         tables['payments']
@@ -627,7 +637,11 @@ def insert_data_in_dimension_table(table_name: str, unique_columns: list, **kwar
             raise FileNotFoundError(f"Fichier {object_path} non trouvé dans MinIO")
 
         # Chargement depuis MinIO
-        response = minio_client.get_object(MINIO_BUCKET_AGGREGATED, object_path)
+        try : 
+            response = minio_client.get_object(MINIO_BUCKET_AGGREGATED, object_path)
+        except Exception as e:
+            logging.error(f"Error while loading data from MinIO : {e}")
+            return f"The data {object_path} for {execution_date} is not available in MinIO"
         df = pl.read_parquet(response.data)
         df = df.drop_nulls(subset=not_null_columns[table_name])
 
@@ -791,7 +805,11 @@ def prepare_and_store_dimensions(execution_date: datetime):
         raw_data = {}
         for table in ['users', 'addresses']:
             obj_path = f"{table}/{table}_{date_str}.parquet"
-            response = minio_client.get_object(MINIO_BUCKET_RAW, obj_path)
+            try : 
+                response = minio_client.get_object(MINIO_BUCKET_RAW, obj_path)
+            except Exception as e:
+                logging.error(f"Error while loading data from MinIO : {e}")
+                continue
             df = pl.read_parquet(response.data)
             
             # Nouveau: Validation des données critiques
@@ -808,13 +826,24 @@ def prepare_and_store_dimensions(execution_date: datetime):
             for table in dim_cfg['source_tables']:
                 if table not in raw_data:
                     object_path = f"{table}/{table}_{date_str}.parquet"
-                    response = minio_client.get_object(MINIO_BUCKET_RAW, object_path)
+                    try : 
+                        response = minio_client.get_object(MINIO_BUCKET_RAW, object_path)
+                    except Exception as e:
+                        logging.error(f"Error while loading data from MinIO : {e}")
+                        continue
                     raw_data[table] = pl.read_parquet(response.data)
                     logging.info(f"Chargé {table} depuis MinIO - {raw_data[table].shape} Head : {raw_data[table].head()}")
                 
         # Traiter chaque dimension
         for dim_name, cfg in dimensions_config.items():
             logging.info(f"Traitement de la dimension {dim_name}...")
+            
+            # Skip if any required source table is missing
+            missing_tables = [t for t in cfg['source_tables'] if t not in raw_data]
+            if missing_tables:
+                logging.warning(f"Skipping {dim_name} - Missing source tables: {missing_tables}")
+                continue
+                
             if dim_name == 'dim_user':
                 user_df = raw_data['users']
                 critical_nulls = user_df.select(
@@ -963,9 +992,15 @@ def insert_data_in_fact_table(table_name: str, **kwargs):
         minio_client = get_minio_client()
 
         # Load data from MinIO
-        response = minio_client.get_object(MINIO_BUCKET_AGGREGATED, config['minio_path'])
-        df = pl.read_parquet(response.data)
-        df = df.with_columns(pl.lit(time_id).alias("time_id"))
+        try:
+            response = minio_client.get_object(MINIO_BUCKET_AGGREGATED, config['minio_path'])
+            df = pl.read_parquet(response.data)
+            df = df.with_columns(pl.lit(time_id).alias("time_id"))
+        except Exception as e:
+            if e.code == 'NoSuchKey':
+                logging.warning(f"No data found for {table_name} on {date_str}, skipping...")
+                return 0
+            raise
         
         # Filter out records with invalid foreign keys
         if table_name == 'fact_sales':
