@@ -22,8 +22,8 @@ CREATE TABLE IF NOT EXISTS dim_product (
     product_id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     category_id INTEGER NOT NULL,
-    category_name VARCHAR(100) NOT NULL,
-    price DECIMAL(10,2) NOT NULL
+    price DECIMAL(10,2) NOT NULL,
+    description TEXT
 );
 
 CREATE TABLE IF NOT EXISTS dim_user (

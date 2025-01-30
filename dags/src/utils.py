@@ -603,13 +603,13 @@ def insert_data_in_dimension_table(table_name: str, unique_columns: list, **kwar
     # Configuration des colonnes obligatoires
     required_columns = {
         'dim_geography': ['country', 'city', 'postal_code'],
-        'dim_product': ['product_id', 'name', 'category_id', 'category_name', 'price'],
+        'dim_product': ['product_id', 'name', 'category_id', 'description', 'price'],
         'dim_user': ['user_id', 'registration_date', 'country', 'city', 'email', 'first_name', 'last_name'],
         'dim_payment_method': ['payment_method_id', 'method_name']
     }
     not_null_columns = {
     'dim_geography': ['country', 'city', 'postal_code'],
-    'dim_product': ['product_id', 'name', 'category_id', 'category_name', 'price'],
+    'dim_product': ['product_id', 'name', 'category_id', 'description', 'price'],
     'dim_user': ['user_id', 'registration_date', 'country', 'city', 'email', 'first_name', 'last_name'],
     'dim_payment_method': ['payment_method_id', 'method_name']
     }
@@ -771,6 +771,16 @@ def prepare_and_store_dimensions(execution_date: datetime):
                     pl.arange(1, pl.count() + 1).cast(pl.Int32).alias('payment_method_id')
                 ])
                 .select('payment_method_id', 'method_name')  # Ensure correct column order
+            )
+        },
+       
+        'dim_product': {
+            'source_tables': ['products'],
+            'columns': ['product_id', 'name', 'category_id', 'price','description'],
+            'processing': lambda df: (
+                df.select([
+                    'product_id', 'name', 'category_id', 'price','description'
+                ])
             )
         }
     }
