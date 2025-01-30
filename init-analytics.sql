@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS dim_time (
 );
 
 CREATE TABLE IF NOT EXISTS dim_geography (
-    geography_id SERIAL PRIMARY KEY,
+    geo_id SERIAL PRIMARY KEY,
     country VARCHAR(100),
     city VARCHAR(100),
     postal_code VARCHAR(20),
@@ -19,28 +19,11 @@ CREATE TABLE IF NOT EXISTS dim_geography (
 );
 
 CREATE TABLE IF NOT EXISTS dim_product (
-    product_id INTEGER PRIMARY KEY,
-    name VARCHAR(255),
-    category_id INTEGER,
-    category_name VARCHAR(100),
-    price DECIMAL(10,2)
-);
-
--- Create dimension tables with proper constraints
-CREATE TABLE IF NOT EXISTS dim_geography (
-    geography_id SERIAL PRIMARY KEY,
-    country VARCHAR(100),
-    city VARCHAR(100),
-    postal_code VARCHAR(20),
-    UNIQUE(country, city, postal_code)
-);
-
-CREATE TABLE IF NOT EXISTS dim_product (
-    product_id INTEGER PRIMARY KEY,
-    name VARCHAR(255),
-    category_id INTEGER,
-    category_name VARCHAR(100),
-    price DECIMAL(10,2)
+    product_id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    category_id INTEGER NOT NULL,
+    category_name VARCHAR(100) NOT NULL,
+    price DECIMAL(10,2) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS dim_user (
@@ -52,27 +35,6 @@ CREATE TABLE IF NOT EXISTS dim_user (
     first_name VARCHAR(100),
     last_name VARCHAR(100)
 );
-
-CREATE TABLE IF NOT EXISTS dim_payment_method (
-    payment_method_id SERIAL PRIMARY KEY,
-    method_name VARCHAR(50) NOT NULL,
-    CONSTRAINT uniq_payment_method UNIQUE(method_name)
-);
-
-CREATE TABLE IF NOT EXISTS dim_payment_method (
-    payment_method_id SERIAL PRIMARY KEY,
-    method_name VARCHAR(50) UNIQUE
-);
-
-CREATE TABLE IF NOT EXISTS dim_product (
-    product_id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    category_id INTEGER NOT NULL,
-    category_name VARCHAR(100) NOT NULL,
-    price DECIMAL(10,2) NOT NULL
-);
-
-
 
 CREATE TABLE IF NOT EXISTS dim_payment_method (
     payment_method_id SERIAL PRIMARY KEY,

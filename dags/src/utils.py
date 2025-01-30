@@ -158,8 +158,6 @@ def clean_data(table_name: str, execution_date, **kwargs):
     'users': {
         'timestamp_columns': ['created_at'],
         'mandatory_columns': ['user_id', 'email', 'first_name', 'last_name'],
-        'default_values': {'default_address_id': -1},
-        'email_validation': True,
         'foreign_keys': [('default_address_id', 'addresses', 'address_id')]
     },
     'addresses': {
@@ -606,7 +604,7 @@ def insert_data_in_dimension_table(table_name: str, unique_columns: list, **kwar
     required_columns = {
         'dim_geography': ['country', 'city', 'postal_code'],
         'dim_product': ['product_id', 'name', 'category_id', 'category_name', 'price'],
-        'dim_user': ['user_id', 'registration_date', 'country', 'city'],
+        'dim_user': ['user_id', 'registration_date', 'country', 'city', 'email', 'first_name', 'last_name'],
         'dim_payment_method': ['payment_method_id', 'method_name']
     }
     not_null_columns = {
@@ -630,9 +628,28 @@ def insert_data_in_dimension_table(table_name: str, unique_columns: list, **kwar
         # Chargement depuis MinIO
         response = minio_client.get_object(MINIO_BUCKET_AGGREGATED, object_path)
         df = pl.read_parquet(response.data)
+        df = df.drop_nulls(subset=not_null_columns[table_name])
+
+        # Nouveau: Validation des contraintes NOT NULL
+        if table_name == 'dim_user':
+            null_check = df.select(
+                pl.col('email').is_null() |
+                pl.col('first_name').is_null() |
+                pl.col('last_name').is_null()
+            ).to_series().any()
+            
+            if null_check:
+                bad_rows = df.filter(
+                    pl.col('email').is_null() |
+                    pl.col('first_name').is_null() |
+                    pl.col('last_name').is_null()
+                )
+                logging.error(f"Lignes invalides:\n{bad_rows}")
+                raise ValueError("Données invalides avec valeurs NULL")
+            
         logging.info(f"Before drop_nulls - shape: {df.shape}")
         logging.info(f"Null counts:\n{df.null_count()}")
-        df = df.drop_nulls(subset=not_null_columns[table_name])
+        df = df.drop_nulls()
         logging.info(f"After drop_nulls - shape: {df.shape}")
         logging.info(f"Données {table_name} chargées depuis MinIO : {df.shape} , Head : {df.head()}")
 
@@ -717,32 +734,32 @@ def prepare_and_store_dimensions(execution_date: datetime):
             'processing': lambda dfs: (
                 dfs['users']
                 .filter(
-                    pl.col('email').is_not_null() &
-                    pl.col('first_name').is_not_null() &
+                    pl.col('email').is_not_null() & 
+                    pl.col('first_name').is_not_null() & 
                     pl.col('last_name').is_not_null()
                 )
                 .join(
-                    dfs['addresses'].select([
-                        'user_id',
-                        'country',
-                        'city'
+                    # Modification ici : on prend la première adresse pour chaque utilisateur
+                    dfs['addresses']
+                    .select(['user_id', 'country', 'city'])
+                    .group_by('user_id')
+                    .agg([
+                        pl.col('country').first().alias('country'),
+                        pl.col('city').first().alias('city')
                     ]),
                     on='user_id',
                     how='left'
                 )
                 .select([
-                    'user_id',
-                    pl.col('created_at').alias('registration_date'),
-                    pl.col('country').fill_null('Unknown'),
-                    pl.col('city').fill_null('Unknown'),
-                    pl.col('email'),
-                    pl.col('first_name'),
-                    pl.col('last_name')
+                'user_id',
+                pl.col('created_at').alias('registration_date'),
+                pl.col('country').fill_null('Unknown'),
+                pl.col('city').fill_null('Unknown'),
+                pl.col('email'),          # Assurez-vous que ces colonnes
+                pl.col('first_name'),     # sont bien présentes dans
+                pl.col('last_name')       # le DataFrame final
                 ])
-                .filter(
-                    pl.col('user_id').is_not_null()
-                )
-            ).drop_nulls(subset=['email', 'first_name', 'last_name'])
+            )
         },
         'dim_payment_method': {
             'source_tables': ['payments'],
@@ -761,6 +778,21 @@ def prepare_and_store_dimensions(execution_date: datetime):
     try:
         # Charger les données nécessaires depuis MinIO
         raw_data = {}
+        for table in ['users', 'addresses']:
+            obj_path = f"{table}/{date_str}/{table}.parquet"
+            response = minio_client.get_object(MINIO_BUCKET_RAW, obj_path)
+            df = pl.read_parquet(response.data)
+            
+            # Nouveau: Validation des données critiques
+            if table == 'users':
+                null_counts = df.select([
+                    pl.col('email').is_null().sum(),
+                    pl.col('first_name').is_null().sum(),
+                    pl.col('last_name').is_null().sum()
+                ])
+                logging.info(f"Null counts in users: {null_counts}")
+            
+            raw_data[table] = df
         for dim_cfg in dimensions_config.values():
             for table in dim_cfg['source_tables']:
                 if table not in raw_data:
@@ -768,11 +800,21 @@ def prepare_and_store_dimensions(execution_date: datetime):
                     response = minio_client.get_object(MINIO_BUCKET_RAW, object_path)
                     raw_data[table] = pl.read_parquet(response.data)
                     logging.info(f"Chargé {table} depuis MinIO - {raw_data[table].shape} Head : {raw_data[table].head()}")
-
+                
         # Traiter chaque dimension
         for dim_name, cfg in dimensions_config.items():
             logging.info(f"Traitement de la dimension {dim_name}...")
-            
+            if dim_name == 'dim_user':
+                user_df = raw_data['users']
+                critical_nulls = user_df.select(
+                    pl.col('email').is_null() |
+                    pl.col('first_name').is_null() |
+                    pl.col('last_name').is_null()
+                ).sum().item()
+                
+                if critical_nulls > 0:
+                    raise ValueError(f"{critical_nulls} lignes avec données critiques manquantes dans {dim_name}")
+                    
             # Application du traitement
             if len(cfg['source_tables']) == 1:
                 df = cfg['processing'](raw_data[cfg['source_tables'][0]])

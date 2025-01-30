@@ -23,7 +23,7 @@ tables = [
     'payments','shipments','reviews','product_views'    ]
 
 with DAG(
-    'ecommerce_metrics_dag-v2',
+    'ecommerce_metrics_dag',
     default_args=default_args,
     schedule_interval='@daily',
     max_active_runs=3,
@@ -89,4 +89,4 @@ with DAG(
         
     end_task = EmptyOperator(task_id ='end_task')
     
-    start_task >> extract_data >>cleaning_tasks >> prepare_data >> end_task
+    start_task >> extract_data >>cleaning_tasks >> prepare_data >>insert_data_in_data_warehouse>> end_task
