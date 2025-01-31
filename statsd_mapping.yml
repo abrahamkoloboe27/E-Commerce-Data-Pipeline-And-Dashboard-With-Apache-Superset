@@ -262,3 +262,9 @@ mappings:
     labels:
       airflow_id: "$1"
       dag_id: "$2"
+
+  - match: "airflow.dag.*.*.duration"
+    name: "airflow_task_duration_seconds"
+    labels:
+      dag_id: "$1"
+      task_id: "$2"

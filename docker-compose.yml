@@ -16,12 +16,11 @@ x-airflow-common:
     AIRFLOW_CONN_MINIO_S3: '{"conn_type": "s3", "extra": {
           "endpoint_url": "http://minio:9000",  "aws_access_key_id": "minioadmin",
           "aws_secret_access_key": "minioadmin",  "verify": false } }'
-    AIRFLOW__SCHEDULER__STATSD_ON: 'true'
-    AIRFLOW__SCHEDULER__STATSD_HOST: statsd-exporter
-    AIRFLOW__SCHEDULER__STATSD_PORT: 8125
-    AIRFLOW__SCHEDULER__STATSD_PREFIX: airflow
+    AIRFLOW__METRICS__STATSD_ON: 'true'
+    AIRFLOW__METRICS__STATSD_HOST: statsd-exporter
+    AIRFLOW__METRICS__STATSD_PORT: '9125'
+    AIRFLOW__METRICS__STATSD_PREFIX: airflow
     AIRFLOW__METRICS__STATSD_MAPPING_FILE: /opt/airflow/statsd_mapping.yml
-
 
   volumes:
     - ./dags:/opt/airflow/dags
