@@ -7,3 +7,5 @@ dags/__pycache__/*
 dump/*
 superset/dashboard/.DS_Store
 ml_pipeline.log
+.env
+datadog.yml

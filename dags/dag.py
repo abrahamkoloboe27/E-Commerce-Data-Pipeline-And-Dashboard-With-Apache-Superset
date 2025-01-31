@@ -4,6 +4,14 @@ from airflow.operators.python_operator import PythonOperator
 from airflow.utils.task_group import TaskGroup
 from airflow.operators.empty import EmptyOperator
 from datetime import datetime, timedelta
+from prometheus_client import Counter, Gauge
+
+
+# Métriques Prometheus
+dag_runs = Counter('ecommerce_dag_runs_total', 'Total number of DAG runs')
+task_duration = Gauge('ecommerce_task_duration_seconds', 'Task execution duration')
+
+
 
 default_args = {
     'owner': 'airflow',
@@ -23,7 +31,7 @@ tables = [
     'payments','shipments','reviews','product_views'    ]
 
 with DAG(
-    'ecommerce_metrics_dag-v1.0.0',
+    'ecommerce_metrics_dag-v1.0.1',
     default_args=default_args,
     schedule_interval='@daily',
     max_active_runs=5,

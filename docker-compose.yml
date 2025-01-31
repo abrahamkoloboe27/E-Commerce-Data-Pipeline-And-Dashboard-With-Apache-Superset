@@ -16,11 +16,20 @@ x-airflow-common:
     AIRFLOW_CONN_MINIO_S3: '{"conn_type": "s3", "extra": {
           "endpoint_url": "http://minio:9000",  "aws_access_key_id": "minioadmin",
           "aws_secret_access_key": "minioadmin",  "verify": false } }'
+    AIRFLOW__SCHEDULER__STATSD_ON: 'true'
+    AIRFLOW__SCHEDULER__STATSD_HOST: statsd-exporter
+    AIRFLOW__SCHEDULER__STATSD_PORT: 8125
+    AIRFLOW__SCHEDULER__STATSD_PREFIX: airflow
+    AIRFLOW__METRICS__STATSD_MAPPING_FILE: /opt/airflow/statsd_mapping.yml
+
+
   volumes:
     - ./dags:/opt/airflow/dags
     - ./plugins:/opt/airflow/plugins
     - ./logs:/opt/airflow/logs
     - ./dump:/opt/airflow/dump
+    - ./statsd_mapping.yml:/opt/airflow/statsd_mapping.yml
+    #- ./airflow.cfg:/opt/airflow/airflow.cfg:ro
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     postgres:
@@ -35,8 +44,8 @@ services:
       POSTGRES_DB: airflow
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U airflow"]
-      interval: 5s
-      retries: 5
+      interval: 10s
+      retries: 10
       start_period: 10s
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
@@ -44,7 +53,8 @@ services:
       - "5432:5432"
     depends_on : 
       data-genrator: 
-        condition: service_completed_successfully
+        condition: service_started
+        #condition: service_completed_successfully
 
   data-genrator: 
     image : data_genrator
@@ -65,8 +75,8 @@ services:
       - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      retries: 5
+      interval: 10s
+      retries: 10
       start_period: 100s
     volumes:
       - postgres-etl-db-volume:/var/lib/postgresql/data
@@ -83,8 +93,8 @@ services:
       POSTGRES_DB: e_commerce_database
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      retries: 5
+      interval: 10s
+      retries: 10
       start_period: 10s
     ports:
       - "5434:5432"
@@ -100,7 +110,7 @@ services:
       test: ["CMD-SHELL", "[ -f /opt/airflow/airflow-scheduler.pid ]"]
       interval: 10s
       timeout: 10s
-      retries: 5
+      retries: 10
     restart: always
     command: airflow scheduler
 
@@ -116,7 +126,7 @@ services:
       test: ["CMD-SHELL", "[ -f /opt/airflow/airflow-webserver.pid ]"]
       interval: 30s
       timeout: 30s
-      retries: 3
+      retries: 5
     restart: always
 
   airflow-init:
@@ -166,9 +176,38 @@ services:
     ports:
       - '8088:8088'
 
+  statsd-exporter:
+    image: prom/statsd-exporter
+    container_name: airflow-statsd-exporter
+    command: "--statsd.listen-udp=:8125 --web.listen-address=:9102"
+    ports:
+        - 9102:9102
+        - 8125:8125/udp
+
+  prometheus:
+    image: prom/prometheus
+    container_name: airflow-prometheus
+    ports:
+        - 9090:9090
+    volumes:
+        - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: airflow-grafana
+    environment:
+        GF_SECURITY_ADMIN_USER: grafana
+        GF_SECURITY_ADMIN_PASSWORD: grafana
+        GF_PATHS_PROVISIONING: /grafana/provisioning
+    ports:
+      - 3000:3000
+    volumes:
+      - ./grafana/provisioning:/grafana/provisioning
+
 volumes:
   postgres-db-volume:
   minio_data:
   superset_data:
   postgres-etl-db-volume:
   postgres-prod-db-volume:
+  grafana-storage:

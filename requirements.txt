@@ -8,3 +8,6 @@ fastparquet
 minio
 polars
 apache-airflow-providers-postgres
+apache-airflow[datadog]
+apache-airflow[statsd]
+prometheus-client
