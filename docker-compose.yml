@@ -29,7 +29,7 @@ x-airflow-common:
     - ./logs:/opt/airflow/logs
     - ./dump:/opt/airflow/dump
     - ./statsd_mapping.yml:/opt/airflow/statsd_mapping.yml
-    #- ./airflow.cfg:/opt/airflow/airflow.cfg:ro
+    - ./airflow.cfg:/opt/airflow/airflow.cfg:ro
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     postgres:

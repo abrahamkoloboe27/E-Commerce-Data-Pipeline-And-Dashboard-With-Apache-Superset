@@ -4,4 +4,4 @@ global:
 scrape_configs:
   - job_name: 'airflow'
     static_configs:
-      - targets: ['host.docker.internal:8080']
+      - targets: ['airflow-webserver:8080']
