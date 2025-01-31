@@ -1,0 +1,83 @@
+slice_name: "\xC9volution du chiffre d'affaire"
+description: null
+certified_by: null
+certification_details: null
+viz_type: big_number
+params:
+  datasource: 11__table
+  viz_type: big_number
+  slice_id: 6
+  x_axis: date
+  time_grain_sqla: P1D
+  metric:
+    aggregate: SUM
+    column:
+      advanced_data_type: null
+      changed_on: '2025-01-31T10:06:01.400115'
+      column_name: real_revenue
+      created_on: '2025-01-31T10:06:01.400114'
+      description: null
+      expression: null
+      extra: null
+      filterable: true
+      groupby: true
+      id: 112
+      is_active: true
+      is_dttm: false
+      python_date_format: null
+      type: DECIMAL
+      type_generic: 0
+      uuid: 51c609b4-86c7-4863-98d8-1d0dc4765b08
+      verbose_name: null
+    datasourceWarning: false
+    expressionType: SIMPLE
+    hasCustomLabel: false
+    label: SUM(real_revenue)
+    optionName: metric_6grlg50y5yw_2dh7r2glira
+    sqlExpression: null
+  adhoc_filters:
+  - clause: WHERE
+    comparator: No filter
+    datasourceWarning: false
+    expressionType: SIMPLE
+    filterOptionName: filter_qnc0ory66d_ugn2krbfmz
+    isExtra: false
+    isNew: false
+    operator: TEMPORAL_RANGE
+    sqlExpression: null
+    subject: date
+  - clause: WHERE
+    comparator:
+    - delivered
+    datasourceWarning: false
+    expressionType: SIMPLE
+    filterOptionName: filter_0hl7o9z4c10q_efimpvbsfgg
+    isExtra: false
+    isNew: false
+    operator: IN
+    operatorId: IN
+    sqlExpression: null
+    subject: order_status
+  compare_lag: 1
+  show_trend_line: true
+  start_y_axis_at_zero: true
+  color_picker:
+    a: 1
+    b: 135
+    g: 122
+    r: 0
+  header_font_size: 0.4
+  subheader_font_size: 0.15
+  y_axis_format: SMART_NUMBER
+  time_format: smart_date
+  rolling_type: None
+  extra_form_data: {}
+  dashboards:
+  - 1
+query_context: '{"datasource":{"id":11,"type":"table"},"force":false,"queries":[{"filters":[{"col":"date","op":"TEMPORAL_RANGE","val":"No
+  filter"},{"col":"order_status","op":"IN","val":["delivered"]}],"extras":{"time_grain_sqla":"P1D","having":"","where":""},"applied_time_extras":{},"columns":[{"timeGrain":"P1D","columnType":"BASE_AXIS","sqlExpression":"date","label":"date","expressionType":"SQL"}],"metrics":[{"aggregate":"SUM","column":{"advanced_data_type":null,"changed_on":"2025-01-31T10:06:01.400115","column_name":"real_revenue","created_on":"2025-01-31T10:06:01.400114","description":null,"expression":null,"extra":null,"filterable":true,"groupby":true,"id":112,"is_active":true,"is_dttm":false,"python_date_format":null,"type":"DECIMAL","type_generic":0,"uuid":"51c609b4-86c7-4863-98d8-1d0dc4765b08","verbose_name":null},"datasourceWarning":false,"expressionType":"SIMPLE","hasCustomLabel":false,"label":"SUM(real_revenue)","optionName":"metric_6grlg50y5yw_2dh7r2glira","sqlExpression":null}],"annotation_layers":[],"series_limit":0,"order_desc":true,"url_params":{},"custom_params":{},"custom_form_data":{},"post_processing":[{"operation":"pivot","options":{"index":["date"],"columns":[],"aggregates":{"SUM(real_revenue)":{"operator":"mean"}},"drop_missing_columns":true}},{"operation":"flatten"}]}],"form_data":{"datasource":"11__table","viz_type":"big_number","slice_id":6,"x_axis":"date","time_grain_sqla":"P1D","metric":{"aggregate":"SUM","column":{"advanced_data_type":null,"changed_on":"2025-01-31T10:06:01.400115","column_name":"real_revenue","created_on":"2025-01-31T10:06:01.400114","description":null,"expression":null,"extra":null,"filterable":true,"groupby":true,"id":112,"is_active":true,"is_dttm":false,"python_date_format":null,"type":"DECIMAL","type_generic":0,"uuid":"51c609b4-86c7-4863-98d8-1d0dc4765b08","verbose_name":null},"datasourceWarning":false,"expressionType":"SIMPLE","hasCustomLabel":false,"label":"SUM(real_revenue)","optionName":"metric_6grlg50y5yw_2dh7r2glira","sqlExpression":null},"adhoc_filters":[{"clause":"WHERE","comparator":"No
+  filter","datasourceWarning":false,"expressionType":"SIMPLE","filterOptionName":"filter_qnc0ory66d_ugn2krbfmz","isExtra":false,"isNew":false,"operator":"TEMPORAL_RANGE","sqlExpression":null,"subject":"date"},{"clause":"WHERE","comparator":["delivered"],"datasourceWarning":false,"expressionType":"SIMPLE","filterOptionName":"filter_0hl7o9z4c10q_efimpvbsfgg","isExtra":false,"isNew":false,"operator":"IN","operatorId":"IN","sqlExpression":null,"subject":"order_status"}],"compare_lag":1,"show_trend_line":true,"start_y_axis_at_zero":true,"color_picker":{"a":1,"b":135,"g":122,"r":0},"header_font_size":0.4,"subheader_font_size":0.15,"y_axis_format":"SMART_NUMBER","time_format":"smart_date","rolling_type":"None","extra_form_data":{},"dashboards":[1],"force":false,"result_format":"json","result_type":"full"},"result_format":"json","result_type":"full"}'
+cache_timeout: null
+uuid: dc544d1d-2c71-475a-a4c0-08b706291036
+version: 1.0.0
+dataset_uuid: 8842a772-e490-428c-a5a7-e1e1de40b7c9
