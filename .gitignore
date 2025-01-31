@@ -6,3 +6,4 @@ dags/__pycache__/*
 **__pycache__/*
 dump/*
 superset/dashboard/.DS_Store
+ml_pipeline.log
