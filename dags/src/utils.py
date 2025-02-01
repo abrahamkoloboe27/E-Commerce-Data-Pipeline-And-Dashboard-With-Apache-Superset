@@ -976,7 +976,7 @@ def insert_data_in_fact_table(table_name: str, **kwargs):
                     'time_id', 'product_id', 'views', 
                     'purchases', 'average_rating', 'conversion_rate'
                 ],
-                'not_null_columns': ['time_id', 'product_id']
+                'not_null_columns': ['time_id', 'product_id','conversion_rate']
             },
             'fact_payment_analytics': {
                 'minio_path': f"fact_payment_analytics/fact_payment_analytics_{date_str}.parquet",
@@ -1006,6 +1006,9 @@ def insert_data_in_fact_table(table_name: str, **kwargs):
         if table_name == 'fact_sales':
             df = df.filter(pl.col('user_id').is_in(valid_user_ids))
             df = df.filter(pl.col('product_id').is_in(valid_product_ids))
+            df = df.with_columns([
+                pl.col('revenue').clip(0, 999999.99).round(2)
+                ])
             # Get geography and payment method IDs
             dim_geo = pl.read_database("SELECT geo_id, country, city FROM dim_geography", connection)
             dim_payment = pl.read_database("SELECT payment_method_id, method_name FROM dim_payment_method", connection)
@@ -1032,6 +1035,9 @@ def insert_data_in_fact_table(table_name: str, **kwargs):
             
             logging.info(f"Before user_id filtering - shape: {df.shape}")
             df = df.filter(pl.col('user_id').is_in(valid_user_ids))
+            df = df.with_columns([
+                    pl.col('cltv').clip(0, 999999.99).round(2)
+                ])
             logging.info(f"After user_id filtering - shape: {df.shape}")
             
             dim_geo = pl.read_database("SELECT geo_id, country, city FROM dim_geography", connection)
@@ -1062,19 +1068,8 @@ def insert_data_in_fact_table(table_name: str, **kwargs):
                 'time_id',
                 
             ])
-            # .with_columns([
-            #     pl.col('product_views').fill_null(0).cast(pl.Int32),
-            #     pl.col('purchases').fill_null(0).cast(pl.Int32), 
-            #     pl.col('cltv').fill_null(0.0).cast(pl.Float64),
-            #     pl.col('retention_status').cast(pl.Boolean)
-            # ])
+  
             df.write_parquet("dump/fact/fact_user_activity.parquet")
-            
-
-            
-            # # Verify no null values remain
-            # if df.get_column('geo_id').null_count() > 0:
-            #     raise ValueError("Still found null geo_ids after applying default")
             
             logging.info(f"data frame : {df.head()}")
             logging.info(f"After geography join - shape: {df.shape}")
@@ -1091,7 +1086,10 @@ def insert_data_in_fact_table(table_name: str, **kwargs):
             )
         elif table_name == "fact_product_performance":
             df = df.filter(pl.col('product_id').is_in(valid_product_ids))
-            
+            df = df.with_columns([
+                    pl.col('average_rating').clip(0, 5).round(2),
+                    pl.col('conversion_rate').clip(0, 1).round(4)
+                ])
         logging.info(f"Data loaded and filtered for {table_name} - shape: {df.shape}")
         
         # Nettoyage des données

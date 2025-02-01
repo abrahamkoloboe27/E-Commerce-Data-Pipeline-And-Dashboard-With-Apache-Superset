@@ -18,7 +18,7 @@ x-airflow-common:
           "aws_secret_access_key": "minioadmin",  "verify": false } }'
     AIRFLOW__METRICS__STATSD_ON: 'true'
     AIRFLOW__METRICS__STATSD_HOST: statsd-exporter
-    AIRFLOW__METRICS__STATSD_PORT: '9125'
+    AIRFLOW__METRICS__STATSD_PORT: '8125'
     AIRFLOW__METRICS__STATSD_PREFIX: airflow
     AIRFLOW__METRICS__STATSD_MAPPING_FILE: /opt/airflow/statsd_mapping.yml
 
@@ -175,33 +175,47 @@ services:
     ports:
       - '8088:8088'
 
+
   statsd-exporter:
     image: prom/statsd-exporter
     container_name: airflow-statsd-exporter
-    command: "--statsd.listen-udp=:8125 --web.listen-address=:9102"
+    volumes:
+      - ./statsd_mapping.yml:/home/statsd-mapping-configs.yaml
+    entrypoint: ["/bin/sh", "-c", "--"]
+    command: ["statsd_exporter --log.level debug --statsd.mapping-config=/home/statsd-mapping-configs.yaml"]
     ports:
-        - 9102:9102
-        - 8125:8125/udp
+      - 9102:9102   # scrape port
+      - 9125:9125   # ingest port
+    restart: always
+    
 
   prometheus:
     image: prom/prometheus
     container_name: airflow-prometheus
-    ports:
-        - 9090:9090
     volumes:
-        - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yaml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yaml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - 9090:9090
+    restart: always
 
   grafana:
     image: grafana/grafana:latest
-    container_name: airflow-grafana
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
     environment:
-        GF_SECURITY_ADMIN_USER: grafana
-        GF_SECURITY_ADMIN_PASSWORD: grafana
-        GF_PATHS_PROVISIONING: /grafana/provisioning
+      - GF_SECURITY_ADMIN_USER=grafana
+      - GF_SECURITY_ADMIN_PASSWORD=grafana
+      - GF_USERS_ALLOW_SIGN_UP=true
+    restart: always
     ports:
       - 3000:3000
-    volumes:
-      - ./grafana/provisioning:/grafana/provisioning
 
 volumes:
   postgres-db-volume:
@@ -209,4 +223,5 @@ volumes:
   superset_data:
   postgres-etl-db-volume:
   postgres-prod-db-volume:
-  grafana-storage:
+  prometheus_data:
+  grafana_data:

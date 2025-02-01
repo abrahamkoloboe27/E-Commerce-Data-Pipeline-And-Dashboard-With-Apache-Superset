@@ -1,34 +1,6 @@
 mappings:
   # Airflow StatsD metrics mappings (https://airflow.apache.org/docs/apache-airflow/stable/logging-monitoring/metrics.html)
   # === Counters ===
-  - match: "(.+)\\.(.+)_start$"
-    match_metric_type: counter
-    name: "af_agg_job_start"
-    match_type: regex
-    labels:
-      airflow_id: "$1"
-      job_name: "$2"
-  - match: "(.+)\\.(.+)_end$"
-    match_metric_type: counter
-    name: "af_agg_job_end"
-    match_type: regex
-    labels:
-      airflow_id: "$1"
-      job_name: "$2"
-  - match: "(.+)\\.operator_failures_(.+)$"
-    match_metric_type: counter
-    name: "af_agg_operator_failures"
-    match_type: regex
-    labels:
-      airflow_id: "$1"
-      operator_name: "$2"
-  - match: "(.+)\\.operator_successes_(.+)$"
-    match_metric_type: counter
-    name: "af_agg_operator_successes"
-    match_type: regex
-    labels:
-      airflow_id: "$1"
-      operator_name: "$2"
   - match: "*.ti_failures"
     match_metric_type: counter
     name: "af_agg_ti_failures"
@@ -262,9 +234,10 @@ mappings:
     labels:
       airflow_id: "$1"
       dag_id: "$2"
-
-  - match: "airflow.dag.*.*.duration"
-    name: "airflow_task_duration_seconds"
+  - match: "*.dag.*.*.my_counter"
+    match_metric_type: counter
+    name: "my_custom_task_counter"
     labels:
-      dag_id: "$1"
-      task_id: "$2"
+      airflow_id: "$1"
+      dag_id: "$2"
+      task_id: "$3"

@@ -20,7 +20,7 @@ default_args = {
     'start_date': datetime(2024, 10, 23),
     'email_on_failure': False,
     'email_on_retry': False,
-    'retries': 1,
+    'retries': 5,
     'retry_delay': timedelta(minutes=5),
 }
 
@@ -31,10 +31,10 @@ tables = [
     'payments','shipments','reviews','product_views'    ]
 
 with DAG(
-    'ecommerce_metrics_dag-v1.0.1',
+    'ecommerce_metrics_dag-v1.0.2',
     default_args=default_args,
     schedule_interval='@daily',
-    max_active_runs=5,
+    max_active_runs=3,
     tags=['ecommerce', 'data-pipeline'],
     concurrency=5,     
     ) as dag:

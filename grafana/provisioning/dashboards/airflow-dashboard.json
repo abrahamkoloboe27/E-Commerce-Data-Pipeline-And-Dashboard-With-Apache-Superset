@@ -1,0 +1,262 @@
+{
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "target": {
+            "limit": 100,
+            "matchAny": false,
+            "tags": [],
+            "type": "dashboard"
+          },
+          "type": "dashboard"
+        }
+      ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 1,
+    "id": 11010,
+    "links": [],
+    "liveNow": false,
+    "panels": [
+   
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "id": 22,
+        "panels": [],
+        "title": "Vue d'ensemble",
+        "type": "row"
+      },
+      {
+        "datasource": "${DS_PROMETHEUS}",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 1
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 5,
+          "w": 6,
+          "x": 0,
+          "y": 1
+        },
+        "id": 2,
+        "options": {
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "showThresholdLabels": false,
+          "showThresholdMarkers": true
+        },
+        "pluginVersion": "9.2.2",
+        "targets": [
+          {
+            "expr": "airflow_scheduler_heartbeat",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "Heartbeat",
+            "refId": "A"
+          }
+        ],
+        "title": "Scheduler Alive",
+        "type": "gauge"
+      },
+      {
+        "datasource": "${DS_PROMETHEUS}",
+        "gridPos": {
+          "h": 5,
+          "w": 6,
+          "x": 6,
+          "y": 1
+        },
+        "id": 4,
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "horizontal",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "textMode": "auto"
+        },
+        "pluginVersion": "9.2.2",
+        "targets": [
+          {
+            "expr": "sum(airflow_executor_running_tasks)",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "Tasks Running",
+            "refId": "A"
+          }
+        ],
+        "title": "Tasks en cours",
+        "type": "stat"
+      },
+
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 6
+        },
+        "id": 23,
+        "panels": [],
+        "title": "Performance des DAGs",
+        "type": "row"
+      },
+      {
+        "datasource": "${DS_PROMETHEUS}",
+        "gridPos": {
+          "h": 7,
+          "w": 12,
+          "x": 0,
+          "y": 7
+        },
+        "id": 6,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "expr": "airflow_dag_processing_last_duration_seconds",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "{{dag_file}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Temps de traitement des DAGs",
+        "type": "timeseries"
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 14
+        },
+        "id": 24,
+        "panels": [],
+        "title": "Erreurs",
+        "type": "row"
+      },
+      {
+        "datasource": "${DS_PROMETHEUS}",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 15
+        },
+        "id": 8,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "expr": "sum(airflow_task_failures) by (dag_id, task_id)",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "{{dag_id}} - {{task_id}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Échecs de tâches par DAG",
+        "type": "timeseries"
+      }
+    ],
+    "refresh": "30s",
+    "schemaVersion": 37,
+    "style": "dark",
+    "tags": ["airflow", "monitoring"],
+    "templating": {
+      "list": [
+        {
+          "current": {
+            "selected": false,
+            "text": "Prometheus",
+            "value": "Prometheus"
+          },
+          "hide": 0,
+          "name": "DS_PROMETHEUS",
+          "options": [],
+          "query": "prometheus",
+          "refresh": 1,
+          "regex": "",
+          "type": "datasource"
+        }
+      ]
+    },
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "",
+    "title": "Airflow Monitoring",
+    "version": 2,
+    "weekStart": ""
+  }
