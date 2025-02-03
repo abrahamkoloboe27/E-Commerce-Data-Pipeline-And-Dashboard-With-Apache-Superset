@@ -7,9 +7,9 @@ from datetime import datetime, timedelta
 from prometheus_client import Counter, Gauge
 
 
-# Métriques Prometheus
-dag_runs = Counter('ecommerce_dag_runs_total', 'Total number of DAG runs')
-task_duration = Gauge('ecommerce_task_duration_seconds', 'Task execution duration')
+# # Métriques Prometheus
+# dag_runs = Counter('ecommerce_dag_runs_total', 'Total number of DAG runs')
+# task_duration = Gauge('ecommerce_task_duration_seconds', 'Task execution duration')
 
 
 

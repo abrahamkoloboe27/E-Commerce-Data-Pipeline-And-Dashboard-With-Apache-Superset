@@ -1,127 +1,139 @@
-# E-commerce Data Pipeline & Analytics Dashboard
+# E-commerce Data Pipeline & Analytics Dashboard 🚀📊
 
-## 📊 Aperçu du projet
-Ce projet est une solution complète de traitement de données pour une plateforme e-commerce, implémentant :
-- Génération de données synthétiques
-- Pipeline de traitement ELT/ETL
-- Data Lake organisé (Bronze-Silver-Gold)
-- Data Warehouse avec modélisation dimensionnelle
-- Tableau de bord analytique
+[![GitHub stars](https://img.shields.io/github/stars/abrahamkoloboe27/Setup-Databases-With-Docker?style=social)](https://github.com/abrahamkoloboe27/Setup-Databases-With-Docker)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com)
 
-## 🛠 Architecture technique
-![Schéma d'architecture](lien_vers_image_schéma.png) *[Optionnel : Ajouter un diagramme d'architecture]*
 
-### Technologies clés :
-- **Génération données** : Python + Faker
-- **Orchestration** : Apache Airflow
-- **Traitement données** : Polars
-- **Stockage** : 
-  - Data Lake : Minio (S3-compatible)
-  - Data Warehouse : PostgreSQL
-- **Visualisation** : Apache Superset
 
-## 🔄 Workflow du pipeline
-1. **Extraction des données**
-   - Connecteur PostgreSQL → Minio (Bronze)
-   - Extraction incrémentale (par date) ou totale
+## Aperçu du Projet
 
-2. **Transformation des données** (via Polars)
-   - **Couche Silver** :
-     - Nettoyage des données
-     - Filtrage des anomalies
-     - Standardisation des formats
-   
-   - **Couche Gold** :
-     - Agrégations métiers
-     - Calculs de KPI
-     - Préparation pour l'analytique
+Ce projet propose une solution complète de traitement de données pour une plateforme e-commerce, couvrant la **génération de données synthétiques**, le **pipeline de traitement ELT/ETL**, le stockage dans un **Data Lake/ Warehouse** et la visualisation via **Apache Superset**.
 
-3. **Chargement dans le Data Warehouse**
-   - Modèle en étoile (Star Schema)
-   - Tables de faits :
-     - Transactions
-     - Interactions utilisateurs
-     - Stocks
-   - Tables de dimensions :
-     - Produits
-     - Clients
-     - Dates
-     - Fournisseurs
 
-4. **Visualisation**
-   - Dashboard interactif avec Apache Superset
-   - Métriques principales :
-     - CA par période
-     - Performances produits
-     - Comportement clients
-     - Analyses géographiques
 
-## 📂 Structure des données
-### Data Lake (Minio)
-```
-minio/
-├── bronze/
-│   ├── raw_sales/
-│   ├── raw_users/
-│   └── ... (tables brutes)
-├── silver/
-│   ├── cleaned_sales/
-│   ├── enriched_users/
-│   └── ... (données traitées)
-└── gold/
-    ├── sales_kpi/
-    ├── customer_lifetime_value/
-    └── ... (agrégats métiers)
-```
 
-### Data Warehouse (PostgreSQL)
-- Schéma `dim_*` pour les dimensions
-- Schéma `fact_*` pour les faits
-- Vues matérialisées pour les requêtes fréquentes
+## Architecture Technique 🏗️
 
-## 🚀 Démarrage rapide
+### Schéma d'architecture
+*Insérez ici un diagramme ou une capture illustrant l’architecture globale (Data Lake, Data Warehouse, Airflow, Superset, etc.).*
+
+![Diagramme d'architecture](./docs/images/architecture_diagram.png)
+
+
+
+## Technologies Utilisées
+
+| **Composant**               | **Technologie**                                                     | **Icône/Image**                           |
+|-----------------------------|----------------------------------------------------------------------|-------------------------------------------|
+| **Génération de Données**   | Python, Faker                                                        | ![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white) |
+| **Orchestration**           | Apache Airflow                                                       | ![Airflow](https://img.shields.io/badge/Airflow-017CEE?logo=apache-airflow&logoColor=white) |
+| **Traitement**              | Polars                                                               | ![Polars](https://img.shields.io/badge/Polars-2A2A2A?logo=python&logoColor=white)  |
+| **Stockage (Data Lake)**    | Minio (S3-compatible)                                                | ![Minio](https://img.shields.io/badge/Minio-00ADEF?logo=minio&logoColor=white) |
+| **Data Warehouse**          | PostgreSQL                                                           | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?logo=postgresql&logoColor=white) |
+| **Visualisation**           | Apache Superset                                                      | ![Superset](https://img.shields.io/badge/Superset-EC6A37?logo=apache-superset&logoColor=white) |
+| **Monitoring**              | Grafana, Prometheus (prévu)                                            | ![Grafana](https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white)  |
+
+
+
+## Workflow du Pipeline 🔄
+
+Le pipeline s'organise en 4 étapes principales :
+
+| **Étape**               | **Description**                                                                                                             | **Technologies / Outils**                                      |
+|-------------------------|-----------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------|
+| **Extraction**          | Récupération des données depuis PostgreSQL vers le Data Lake (Minio – couche Bronze).                                        | PostgreSQL, Minio                                              |
+| **Transformation**      | Nettoyage, filtrage, agrégations et calcul des KPI. Les données passent par une couche Silver (nettoyées) puis Gold (agrégées). | Polars                                                         |
+| **Chargement**          | Insertion des données transformées dans le Data Warehouse en utilisant un modèle en étoile (Star Schema).                     | PostgreSQL, Vues matérialisées                                   |
+| **Visualisation**       | Création d’un dashboard interactif pour suivre les performances (CA, produits, clients, etc.).                              | Apache Superset                                                |
+
+*Astuce : Ajoutez une capture du dashboard Superset pour une meilleure illustration.*
+
+![Dashboard Superset](./docs/images/superset_dashboard.png)
+
+
+
+## Focus sur Apache Airflow 🐍⏰
+
+Le dossier `dags/` contient la définition des workflows Airflow. En particulier, le fichier `dags/ecommerce_pipeline.py` orchestre l’ensemble du pipeline :
+
+- **Définition du DAG**  
+  Le DAG est configuré pour s’exécuter à une fréquence définie (ex : quotidiennement) et comprend plusieurs tâches :
+  - **Extraction** : Récupérer les données depuis PostgreSQL.
+  - **Transformation** : Utiliser Polars pour nettoyer et transformer les données.
+  - **Chargement** : Insérer les données dans le Data Warehouse.
+  
+- **Graphique du DAG**  
+  *Insérez ici une capture du graphique de tâches d’Airflow pour visualiser l’ordonnancement du pipeline.*
+
+![Graphique du DAG Airflow](./docs/images/airflow_dag.png)
+
+
+
+## Démarrage Rapide 🚀
+
 ### Prérequis
-- Docker + Docker-compose
-- Python 3.10+
+
+- **Docker** & **Docker-compose**
+- **Python 3.10+**
 
 ### Installation
-1. Cloner le dépôt
-```bash
-git clone https://github.com/votre-repo/ecommerce-pipeline.git
-cd ecommerce-pipeline
-```
 
-2. Démarrer l'infrastructure
-```bash
-docker-compose up -d
-```
+1. **Cloner le dépôt**
+   ```bash
+   git clone https://github.com/abrahamkoloboe27/E-Commerce-Data-Pipeline-And-Dashboard-With-Apache-Superset.git
+   cd E-Commerce-Data-Pipeline-And-Dashboard-With-Apache-Superset
+   ```
 
-3. Configurer Airflow
-```bash
-airflow db init
-airflow users create --username admin --password admin --role Admin --email admin@example.com
-```
+2. **Démarrer l'infrastructure**
+   ```bash
+   docker-compose up -d
+   ```
 
-4. Lancer le pipeline
-```bash
-airflow dags unpause ecommerce_pipeline
-```
+3. **Configurer Airflow**
+   ```bash
+   airflow db init
+   airflow users create --username admin --password admin --role Admin --email admin@example.com
+   ```
 
-## 🔍 Monitoring
-- **Airflow** : http://localhost:8080
-- **Minio** : http://localhost:9001
-- **Superset** : http://localhost:8088
-- **PostgreSQL** : 
-  - Prod: port 5432
-  - Analytics: port 5433
+4. **Lancer le pipeline**
+   ```bash
+   airflow dags unpause ecommerce_pipeline
+   ```
 
-## 📈 Améliorations futures
-- Implémentation de tests de qualité des données (Great Expectations)
-- Ajout de mécanismes de rejeu de données
-- Intégration de Machine Learning (recommandations)
-- Monitoring détaillé avec Prometheus/Grafana
 
-## 📚 Documentation complémentaire
-- [Specifications techniques](docs/SPECS.md)
-- [Guide de déploiement](docs/DEPLOYMENT.md)
-- [Modèle de données](docs/DATA_MODEL.md)
+
+## Monitoring & Accès 🖥️
+
+| **Service**       | **URL**                        | **Port**     |
+|-------------------|--------------------------------|--------------|
+| **Airflow**       | [http://localhost:8080](http://localhost:8080)       | 8080         |
+| **Minio**         | [http://localhost:9001](http://localhost:9001)       | 9001         |
+| **Superset**      | [http://localhost:8088](http://localhost:8088)       | 8088         |
+| **PostgreSQL**    | - Prod : `localhost:5432`      | 5432 (Prod)  |
+|                   | - Analytics : `localhost:5433` | 5433         |
+
+
+
+## Améliorations Futures 🔮
+
+- **Tests de Qualité des Données** : Intégrer [Great Expectations](https://greatexpectations.io) pour automatiser la validation des données.
+- **Rejeu de Données** : Mettre en place des mécanismes permettant de rejouer le pipeline en cas d'erreur.
+- **Machine Learning** : Ajouter des modules de recommandation et d'analyse prédictive.
+- **Monitoring Avancé** : Utiliser Prometheus et Grafana pour un suivi détaillé des performances du pipeline.
+
+
+
+## Ressources Complémentaires
+
+- [Guide de Déploiement](./docs/deployment_guide.md)
+- [Specifications Techniques](./docs/technical_specs.md)
+- [Modèle de Données](./docs/data_model.png)
+
+
+## About
+
+Ce projet a été développé pour démontrer une solution complète de pipeline de données pour une plateforme e-commerce. Pour plus d’informations ou pour toute question, n’hésitez pas à me contacter :
+
+- **Email** : abklb27@gmail.com
+- **LinkedIn** : [Abraham KOLOBOE](https://www.linkedin.com/in/abraham-zacharie-koloboe-data-science-ia-generative-llms-machine-learning/)

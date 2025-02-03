@@ -1,6 +1,7 @@
 global:
   scrape_interval:     5s
   evaluation_interval: 15s
+  #retention: 30d
 
 scrape_configs:
   - job_name: airflow
