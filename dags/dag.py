@@ -5,11 +5,17 @@ from airflow.utils.task_group import TaskGroup
 from airflow.operators.empty import EmptyOperator
 from datetime import datetime, timedelta
 from prometheus_client import Counter, Gauge
+from statsd import StatsClient
+from airflow.configuration import conf
+
+STATSD_HOST = conf.get("metrics", "statsd_host")
+STATSD_PORT = conf.get("metrics", "statsd_port")
+STATSD_PREFIX = conf.get("metrics", "statsd_prefix")
 
 
 # # Métriques Prometheus
-# dag_runs = Counter('ecommerce_dag_runs_total', 'Total number of DAG runs')
-# task_duration = Gauge('ecommerce_task_duration_seconds', 'Task execution duration')
+dag_runs = Counter('ecommerce_dag_runs_total', 'Total number of DAG runs')
+task_duration = Gauge('ecommerce_task_duration_seconds', 'Task execution duration')
 
 
 
@@ -20,8 +26,8 @@ default_args = {
     'start_date': datetime(2024, 10, 23),
     'email_on_failure': False,
     'email_on_retry': False,
-    'retries': 5,
-    'retry_delay': timedelta(minutes=5),
+    'retries': 2,
+    'retry_delay': timedelta(minutes=2),
 }
 
 

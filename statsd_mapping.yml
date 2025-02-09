@@ -184,6 +184,35 @@ mappings:
     name: "af_agg_smart_sensor_operator_infra_failures"
     labels:
       airflow_id: "$1"
+  - match: "*.operator_successes"
+    match_metric_type: counter
+    name: "af_agg_operator_successes"
+    labels:
+      airflow_id: "$1"
+      operator: "$2"
+
+  - match: "*.dag.*.*.job_count"
+    match_metric_type: counter
+    name: "af_agg_job_count"
+    labels:
+      airflow_id: "$1"
+      dag_id: "$2"
+      task_id: "$3"
+
+  - match: "*.dag.*.*.job_start"
+    match_metric_type: counter
+    name: "af_agg_job_start"
+    labels:
+      airflow_id: "$1"
+      dag_id: "$2"
+      task_id: "$3"
+  - match: "*.dag.*.*.job_end"
+    match_metric_type: counter
+    name: "af_agg_job_end"
+    labels:
+      airflow_id: "$1"
+      dag_id: "$2"
+      task_id: "$3"
 
   # === Timers ===
   - match: "*.dagrun.dependency-check.*"

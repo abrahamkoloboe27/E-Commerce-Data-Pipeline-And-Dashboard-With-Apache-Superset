@@ -16,11 +16,7 @@ x-airflow-common:
     AIRFLOW_CONN_MINIO_S3: '{"conn_type": "s3", "extra": {
           "endpoint_url": "http://minio:9000",  "aws_access_key_id": "minioadmin",
           "aws_secret_access_key": "minioadmin",  "verify": false } }'
-    AIRFLOW__METRICS__STATSD_ON: 'true'
-    AIRFLOW__METRICS__STATSD_HOST: statsd-exporter
-    AIRFLOW__METRICS__STATSD_PORT: '8125'
-    AIRFLOW__METRICS__STATSD_PREFIX: airflow
-    AIRFLOW__METRICS__STATSD_MAPPING_FILE: /opt/airflow/statsd_mapping.yml
+
 
   volumes:
     - ./dags:/opt/airflow/dags
@@ -28,7 +24,7 @@ x-airflow-common:
     - ./logs:/opt/airflow/logs
     - ./dump:/opt/airflow/dump
     - ./statsd_mapping.yml:/opt/airflow/statsd_mapping.yml
-    - ./airflow.cfg:/opt/airflow/airflow.cfg:ro
+    - ./airflow.cfg:/opt/airflow/airflow.cfg
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     postgres:
@@ -50,19 +46,23 @@ services:
       - postgres-db-volume:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-    depends_on : 
-      data-genrator: 
-        condition: service_started
-        #condition: service_completed_successfully
+    networks:
+      - ecommerce-network
+    # depends_on : 
+    #   data-genrator: 
+    #     condition: service_started
+    #     #condition: service_completed_successfully
 
-  data-genrator: 
-    image : data_genrator
-    build : ./data_genrator
-    depends_on:
-      postgres-prod:
-        condition: service_healthy
-    volumes:
-      - ./data_genrator:/opt/airflow/data_genrator
+  # data-genrator: 
+  #   image : data_genrator
+  #   build : ./data_genrator
+  #   depends_on:
+  #     postgres-prod:
+  #       condition: service_healthy
+  #   volumes:
+  #     - ./data_genrator:/opt/airflow/data_genrator
+  #   networks:
+  #     - ecommerce-network
 
   postgres-etl:
     image: postgres:16-alpine
@@ -83,6 +83,8 @@ services:
     depends_on : 
       airflow-webserver: 
         condition: service_started
+    networks:
+      - ecommerce-network
 
   postgres-prod:
     image: postgres:16-alpine
@@ -100,6 +102,8 @@ services:
     volumes:
       - postgres-prod-db-volume:/var/lib/postgresql/data
       - ./init-prod.sql:/docker-entrypoint-initdb.d/init-prod.sql
+    networks:
+      - ecommerce-network
 
   airflow-scheduler:
     <<: *airflow-common
@@ -112,6 +116,8 @@ services:
       retries: 10
     restart: always
     command: airflow scheduler
+    networks:
+      - ecommerce-network
 
   airflow-webserver:
     <<: *airflow-common
@@ -127,6 +133,8 @@ services:
       timeout: 30s
       retries: 5
     restart: always
+    networks:
+      - ecommerce-network
 
   airflow-init:
     <<: *airflow-common
@@ -141,6 +149,8 @@ services:
       _AIRFLOW_WWW_USER_CREATE: "true"
       _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_USERNAME:-airflow}
       _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_PASSWORD:-airflow}
+    networks:
+      - ecommerce-network
 
   minio:
     image: minio/minio
@@ -157,6 +167,8 @@ services:
     depends_on:
       airflow-webserver:
         condition: service_started
+    networks:
+      - ecommerce-network
 
     
 
@@ -174,10 +186,12 @@ services:
       - airflow-webserver
     ports:
       - '8088:8088'
+    networks:
+      - ecommerce-network
 
 
   statsd-exporter:
-    image: prom/statsd-exporter
+    image: prom/statsd-exporter:v0.21.0
     container_name: airflow-statsd-exporter
     volumes:
       - ./statsd_mapping.yml:/home/statsd-mapping-configs.yaml
@@ -187,10 +201,12 @@ services:
       - 9102:9102   # scrape port
       - 9125:9125   # ingest port
     restart: always
+    networks:
+      - ecommerce-network
     
 
   prometheus:
-    image: prom/prometheus
+    image: prom/prometheus:v2.26.0
     container_name: airflow-prometheus
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yaml
@@ -203,6 +219,8 @@ services:
     ports:
       - 9090:9090
     restart: always
+    networks:
+      - ecommerce-network
 
   grafana:
     image: grafana/grafana:latest
@@ -216,6 +234,8 @@ services:
     restart: always
     ports:
       - 3000:3000
+    networks:
+      - ecommerce-network
 
 volumes:
   postgres-db-volume:
@@ -225,3 +245,7 @@ volumes:
   postgres-prod-db-volume:
   prometheus_data:
   grafana_data:
+
+networks:
+  ecommerce-network:
+    driver: bridge
