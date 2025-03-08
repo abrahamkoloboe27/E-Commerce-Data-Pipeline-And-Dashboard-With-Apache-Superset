@@ -1,6 +1,34 @@
 mappings:
   # Airflow StatsD metrics mappings (https://airflow.apache.org/docs/apache-airflow/stable/logging-monitoring/metrics.html)
   # === Counters ===
+  - match: "(.+)\\.(.+)_start$"
+    match_metric_type: counter
+    name: "af_agg_job_start"
+    match_type: regex
+    labels:
+      airflow_id: "$1"
+      job_name: "$2"
+  - match: "(.+)\\.(.+)_end$"
+    match_metric_type: counter
+    name: "af_agg_job_end"
+    match_type: regex
+    labels:
+      airflow_id: "$1"
+      job_name: "$2"
+  - match: "(.+)\\.operator_failures_(.+)$"
+    match_metric_type: counter
+    name: "af_agg_operator_failures"
+    match_type: regex
+    labels:
+      airflow_id: "$1"
+      operator_name: "$2"
+  - match: "(.+)\\.operator_successes_(.+)$"
+    match_metric_type: counter
+    name: "af_agg_operator_successes"
+    match_type: regex
+    labels:
+      airflow_id: "$1"
+      operator_name: "$2"
   - match: "*.ti_failures"
     match_metric_type: counter
     name: "af_agg_ti_failures"
@@ -184,35 +212,6 @@ mappings:
     name: "af_agg_smart_sensor_operator_infra_failures"
     labels:
       airflow_id: "$1"
-  - match: "*.operator_successes"
-    match_metric_type: counter
-    name: "af_agg_operator_successes"
-    labels:
-      airflow_id: "$1"
-      operator: "$2"
-
-  - match: "*.dag.*.*.job_count"
-    match_metric_type: counter
-    name: "af_agg_job_count"
-    labels:
-      airflow_id: "$1"
-      dag_id: "$2"
-      task_id: "$3"
-
-  - match: "*.dag.*.*.job_start"
-    match_metric_type: counter
-    name: "af_agg_job_start"
-    labels:
-      airflow_id: "$1"
-      dag_id: "$2"
-      task_id: "$3"
-  - match: "*.dag.*.*.job_end"
-    match_metric_type: counter
-    name: "af_agg_job_end"
-    labels:
-      airflow_id: "$1"
-      dag_id: "$2"
-      task_id: "$3"
 
   # === Timers ===
   - match: "*.dagrun.dependency-check.*"
@@ -263,10 +262,3 @@ mappings:
     labels:
       airflow_id: "$1"
       dag_id: "$2"
-  - match: "*.dag.*.*.my_counter"
-    match_metric_type: counter
-    name: "my_custom_task_counter"
-    labels:
-      airflow_id: "$1"
-      dag_id: "$2"
-      task_id: "$3"

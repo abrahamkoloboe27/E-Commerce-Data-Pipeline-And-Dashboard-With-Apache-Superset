@@ -1,13 +1,16 @@
 global:
-  scrape_interval:     5s
+  scrape_interval: 15s
   evaluation_interval: 15s
-  #retention: 30d
 
 scrape_configs:
-  - job_name: airflow
-    scheme: http
-    metrics_path: metrics
+  - job_name: 'statsd'
     static_configs:
-      - targets: ['host.docker.internal:9102']
-        labels:
-          airflow_id: 'airflow'
+      - targets: ['statsd-exporter:9102']
+    
+  - job_name: 'airflow'
+    static_configs:
+      - targets: ['airflow-webserver:8080']
+
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432', 'postgres-etl:5432', 'postgres-prod:5432']

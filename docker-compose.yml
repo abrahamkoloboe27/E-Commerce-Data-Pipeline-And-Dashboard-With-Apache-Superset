@@ -226,6 +226,8 @@ services:
     image: grafana/grafana:latest
     container_name: grafana
     volumes:
+      - ./grafana/dashboards:/etc/grafana/dashboards
+      - ./grafana/provisioning:/etc/grafana/provisioning
       - grafana_data:/var/lib/grafana
     environment:
       - GF_SECURITY_ADMIN_USER=grafana
@@ -236,6 +238,7 @@ services:
       - 3000:3000
     networks:
       - ecommerce-network
+    
 
 volumes:
   postgres-db-volume:
