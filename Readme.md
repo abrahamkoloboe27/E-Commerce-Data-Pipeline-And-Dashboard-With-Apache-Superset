@@ -4,136 +4,129 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com)
 
+## Project Overview 🎯
 
+A comprehensive data pipeline solution for an e-commerce platform, featuring:
+- 🔄 **Data Generation**: Synthetic data creation using Python & Faker
+- 🔁 **ETL Pipeline**: Data extraction, transformation, and loading
+- 💾 **Data Lake Architecture**: Bronze, Silver, and Gold layer implementation
+- 📊 **Analytics & Visualization**: Interactive dashboards with Apache Superset
 
-## Aperçu du Projet
+## Architecture 🏗️
 
-Ce projet propose une solution complète de traitement de données pour une plateforme e-commerce, couvrant la **génération de données synthétiques**, le **pipeline de traitement ELT/ETL**, le stockage dans un **Data Lake/ Warehouse** et la visualisation via **Apache Superset**.
+![Architecture Diagram](assets/img/pipeline.png)
 
+### Components Overview 🔍
 
+| Layer | Components | Technologies |
+|-------|------------|--------------|
+| **Data Source** 📝 | - Data Generator<br>- Production Database | ![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white) ![Faker](https://img.shields.io/badge/Faker-000000?logo=python&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?logo=postgresql&logoColor=white) |
+| **Orchestration** ⚙️ | - Workflow Management<br>- Task Scheduling | ![Airflow](https://img.shields.io/badge/Airflow-017CEE?logo=apache-airflow&logoColor=white) |
+| **Data Lake** 💧 | - Bronze Layer<br>- Silver Layer<br>- Gold Layer | ![MinIO](https://img.shields.io/badge/MinIO-C72E49?logo=minio&logoColor=white) ![Delta](https://img.shields.io/badge/Delta-003366?logo=delta&logoColor=white) |
+| **Data Warehouse** 🏢 | - Analytics Database<br>- Star Schema | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?logo=postgresql&logoColor=white) |
+| **Visualization** 📈 | - Dashboards<br>- KPI Monitoring | ![Superset](https://img.shields.io/badge/Superset-EC6A37?logo=apache&logoColor=white) |
+| **Monitoring** 🔍 | - Metrics Collection<br>- Performance Monitoring | ![StatsD](https://img.shields.io/badge/StatsD-4B32C3?logo=graphite&logoColor=white) ![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?logo=prometheus&logoColor=white) ![Grafana](https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white) |
 
+## Technology Stack 🛠️
 
-## Architecture Technique 🏗️
+### Development Tools 💻
+| Tool | Version | Purpose |
+|------|---------|----------|
+| ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white) Docker | 20.10+ | Containerization |
+| ![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white) Python | 3.10+ | Development |
+| ![VS Code](https://img.shields.io/badge/VS_Code-007ACC?logo=visual-studio-code&logoColor=white) VS Code | Latest | IDE |
 
-### Schéma d'architecture
+### Data Processing 🔄
+| Tool | Purpose | Badge |
+|------|----------|-------|
+| Polars | Data transformation | ![Polars](https://img.shields.io/badge/Polars-2A2A2A?logo=python&logoColor=white) |
+| Delta Lake | Data versioning | ![Delta](https://img.shields.io/badge/Delta-003366?logo=delta&logoColor=white) |
 
+## Quick Start 🚀
 
-![Diagramme d'architecture](assets/img/pipeline.png)
+### System Requirements 🖥️
+| Component | Minimum | Recommended |
+|-----------|---------|-------------|
+| CPU | 4 cores | 8 cores |
+| RAM | 8GB | 16GB |
+| Storage | 20GB | 50GB |
+| OS | macOS/Linux | macOS/Linux |
 
+1. **Clone the repository**
+```bash
+git clone https://github.com/abrahamkoloboe27/e-commerce-pipeline.git
+cd e-commerce-pipeline
+```
 
+2. **Start the infrastructure**
+```bash
+docker-compose up -d
+```
 
-## Technologies Utilisées
+3. **Initialize the databases**
+```bash
+docker-compose exec postgres psql -U postgres -f /init-prod.sql
+```
 
-| **Composant**               | **Technologie**                                                     | **Icône/Image**                           |
-|-----------------------------|----------------------------------------------------------------------|-------------------------------------------|
-| **Génération de Données**   | Python, Faker                                                        | ![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white) |
-| **Orchestration**           | Apache Airflow                                                       | ![Airflow](https://img.shields.io/badge/Airflow-017CEE?logo=apache-airflow&logoColor=white) |
-| **Traitement**              | Polars                                                               | ![Polars](https://img.shields.io/badge/Polars-2A2A2A?logo=python&logoColor=white)  |
-| **Stockage (Data Lake)**    | Minio (S3-compatible)                                                | ![Minio](https://img.shields.io/badge/Minio-00ADEF?logo=minio&logoColor=white) |
-| **Data Warehouse**          | PostgreSQL                                                           | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?logo=postgresql&logoColor=white) |
-| **Visualisation**           | Apache Superset                                                      | ![Superset](https://img.shields.io/badge/Superset-EC6A37?logo=apache-superset&logoColor=white) |
-| **Monitoring**              | Grafana, Prometheus (prévu)                                            | ![Grafana](https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white)  |
+### Access Points 🔗
 
+| Service | URL | Credentials | Logo |
+|---------|-----|-------------|------|
+| Airflow | http://localhost:8080 | admin/admin | ![Airflow](https://img.shields.io/badge/Airflow-017CEE?logo=apache-airflow&logoColor=white) |
+| MinIO Console | http://localhost:9001 | minioadmin/minioadmin | ![MinIO](https://img.shields.io/badge/MinIO-C72E49?logo=minio&logoColor=white) |
+| Superset | http://localhost:8088 | admin/admin | ![Superset](https://img.shields.io/badge/Superset-EC6A37?logo=apache&logoColor=white) |
+| Grafana | http://localhost:3000 | admin/admin | ![Grafana](https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white) |
 
+## Pipeline Workflow 🔄
 
-## Workflow du Pipeline 🔄
+### Data Flow Summary 📊
+| Stage | Input | Output | Technology |
+|-------|--------|---------|------------|
+| Extraction 📥 | PostgreSQL | MinIO (Bronze) | Airflow, Polars |
+| Processing 🔄 | Bronze Layer | Silver Layer | Polars |
+| Aggregation 📊 | Silver Layer | Gold Layer | Polars |
+| Visualization 📈 | Gold Layer | Dashboards | Superset |
 
-Le pipeline s'organise en 4 étapes principales :
+1. **Data Extraction (Bronze Layer)**
+   - Daily extraction from PostgreSQL
+   - Raw data storage in MinIO
 
-| **Étape**               | **Description**                                                                                                             | **Technologies / Outils**                                      |
-|-------------------------|-----------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------|
-| **Extraction**          | Récupération des données depuis PostgreSQL vers le Data Lake (Minio – couche Bronze).                                        | PostgreSQL, Minio                                              |
-| **Transformation**      | Nettoyage, filtrage, agrégations et calcul des KPI. Les données passent par une couche Silver (nettoyées) puis Gold (agrégées). | Polars                                                         |
-| **Chargement**          | Insertion des données transformées dans le Data Warehouse en utilisant un modèle en étoile (Star Schema).                     | PostgreSQL, Vues matérialisées                                   |
-| **Visualisation**       | Création d’un dashboard interactif pour suivre les performances (CA, produits, clients, etc.).                              | Apache Superset                                                |
+2. **Data Processing (Silver Layer)**
+   - Data cleaning and validation
+   - Schema standardization
+   - Quality checks
 
-*Astuce : Ajoutez une capture du dashboard Superset pour une meilleure illustration.*
+3. **Data Aggregation (Gold Layer)**
+   - KPI calculation
+   - Business metrics computation
+   - Analytical views creation
 
-![Dashboard Superset](./docs/images/superset_dashboard.png)
+4. **Data Visualization**
+   - Real-time dashboards
+   - KPI monitoring
+   - Business insights
 
+## Monitoring & Observability 📊
 
+- Real-time pipeline monitoring
+- Data quality metrics
+- System performance dashboards
+- Alert configuration
 
-## Focus sur Apache Airflow 🐍⏰
+## Future Enhancements 🔮
 
-Le dossier `dags/` contient la définition des workflows Airflow. En particulier, le fichier `dags/ecommerce_pipeline.py` orchestre l’ensemble du pipeline :
+- [ ] Data quality validation with Great Expectations
+- [ ] Advanced ML pipeline integration
+- [ ] Real-time streaming capabilities
 
-- **Définition du DAG**  
-  Le DAG est configuré pour s’exécuter à une fréquence définie (ex : quotidiennement) et comprend plusieurs tâches :
-  - **Extraction** : Récupérer les données depuis PostgreSQL.
-  - **Transformation** : Utiliser Polars pour nettoyer et transformer les données.
-  - **Chargement** : Insérer les données dans le Data Warehouse.
-  
-- **Graphique du DAG**  
-  *Insérez ici une capture du graphique de tâches d’Airflow pour visualiser l’ordonnancement du pipeline.*
+## About 👨‍💻
 
-![Graphique du DAG Airflow](./docs/images/airflow_dag.png)
+Developed by Abraham KOLOBOE. For questions or collaboration:
 
+- 📧 **Email**: abklb27@gmail.com
+- 💼 **LinkedIn**: [Abraham KOLOBOE](https://www.linkedin.com/in/abraham-zacharie-koloboe-data-science-ia-generative-llms-machine-learning/)
+- 🐙 **GitHub**: [abrahamkoloboe27](https://github.com/abrahamkoloboe27)
 
+## License 📄
 
-## Démarrage Rapide 🚀
-
-### Prérequis
-
-- **Docker** & **Docker-compose**
-- **Python 3.10+**
-
-### Installation
-
-1. **Cloner le dépôt**
-   ```bash
-   git clone https://github.com/abrahamkoloboe27/E-Commerce-Data-Pipeline-And-Dashboard-With-Apache-Superset.git
-   cd E-Commerce-Data-Pipeline-And-Dashboard-With-Apache-Superset
-   ```
-
-2. **Démarrer l'infrastructure**
-   ```bash
-   docker-compose up -d
-   ```
-
-3. **Configurer Airflow**
-   ```bash
-   airflow db init
-   airflow users create --username admin --password admin --role Admin --email admin@example.com
-   ```
-
-4. **Lancer le pipeline**
-   ```bash
-   airflow dags unpause ecommerce_pipeline
-   ```
-
-
-
-## Monitoring & Accès 🖥️
-
-| **Service**       | **URL**                        | **Port**     |
-|-------------------|--------------------------------|--------------|
-| **Airflow**       | [http://localhost:8080](http://localhost:8080)       | 8080         |
-| **Minio**         | [http://localhost:9001](http://localhost:9001)       | 9001         |
-| **Superset**      | [http://localhost:8088](http://localhost:8088)       | 8088         |
-| **PostgreSQL**    | - Prod : `localhost:5432`      | 5432 (Prod)  |
-|                   | - Analytics : `localhost:5433` | 5433         |
-
-
-
-## Améliorations Futures 🔮
-
-- **Tests de Qualité des Données** : Intégrer [Great Expectations](https://greatexpectations.io) pour automatiser la validation des données.
-- **Rejeu de Données** : Mettre en place des mécanismes permettant de rejouer le pipeline en cas d'erreur.
-- **Machine Learning** : Ajouter des modules de recommandation et d'analyse prédictive.
-- **Monitoring Avancé** : Utiliser Prometheus et Grafana pour un suivi détaillé des performances du pipeline.
-
-
-
-## Ressources Complémentaires
-
-- [Guide de Déploiement](./docs/deployment_guide.md)
-- [Specifications Techniques](./docs/technical_specs.md)
-- [Modèle de Données](./docs/data_model.png)
-
-
-## About
-
-Ce projet a été développé pour démontrer une solution complète de pipeline de données pour une plateforme e-commerce. Pour plus d’informations ou pour toute question, n’hésitez pas à me contacter :
-
-- **Email** : abklb27@gmail.com
-- **LinkedIn** : [Abraham KOLOBOE](https://www.linkedin.com/in/abraham-zacharie-koloboe-data-science-ia-generative-llms-machine-learning/)
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
