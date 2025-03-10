@@ -16,9 +16,9 @@ Ce projet propose une solution complète de traitement de données pour une plat
 ## Architecture Technique 🏗️
 
 ### Schéma d'architecture
-*Insérez ici un diagramme ou une capture illustrant l’architecture globale (Data Lake, Data Warehouse, Airflow, Superset, etc.).*
 
-![Diagramme d'architecture](./docs/images/architecture_diagram.png)
+
+![Diagramme d'architecture](assets/img/pipeline.png)
 
 
 
