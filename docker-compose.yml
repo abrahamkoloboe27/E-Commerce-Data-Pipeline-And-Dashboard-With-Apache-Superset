@@ -209,10 +209,9 @@ services:
     image: prometheuscommunity/postgres-exporter
     container_name: postgres-exporter
     environment:
-      PG_EXPORTER_CONFIG_FILE: "/postgres_exporter.yml"  # Chemin absolu
-      PG_EXPORTER_AUTO_DISCOVER_DATABASES: "true"
+      PG_EXPORTER_CONFIG_FILE: "/config/postgres_exporter.yml"
     volumes:
-      - ./postgres_exporter/postgres_exporter.yml:/postgres_exporter.yml  # Vérifier le chemin local
+      - ./postgres_exporter/postgres_exporter.yml:/config/postgres_exporter.yml
     ports:
       - 9187:9187
     depends_on:
@@ -221,6 +220,8 @@ services:
       - postgres-prod
     networks:
       - ecommerce-network
+
+
     
 
   prometheus:
