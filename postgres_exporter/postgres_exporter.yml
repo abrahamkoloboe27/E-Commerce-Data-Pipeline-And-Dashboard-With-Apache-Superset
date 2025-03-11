@@ -1,0 +1,32 @@
+data_source_names:
+  - postgresql://airflow:airflow@postgres:5432/airflow?sslmode=disable
+  - postgresql://postgres:postgres@postgres-etl:5432/ecommerce_metrics?sslmode=disable
+  - postgresql://postgres:postgres@postgres-prod:5432/e_commerce_database?sslmode=disable
+
+# Configurations des métriques personnalisées si nécessaire
+custom_queries:
+  pg_database:
+    query: |
+      SELECT d.datname as name,
+             pg_database_size(d.datname) as size_bytes
+      FROM pg_database d
+    metrics:
+      - name:
+          usage: "LABEL"
+          description: "Name of the database"
+      - size_bytes:
+          usage: "GAUGE"
+          description: "Size of the database in bytes"
+
+  pg_stat_activity:
+    query: |
+      SELECT state, count(*) as count
+      FROM pg_stat_activity
+      GROUP BY state
+    metrics:
+      - state:
+          usage: "LABEL"
+          description: "Connection state"
+      - count:
+          usage: "GAUGE"
+          description: "Number of connections in this state"
