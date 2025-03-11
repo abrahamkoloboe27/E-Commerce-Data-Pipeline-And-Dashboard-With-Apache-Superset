@@ -14,7 +14,50 @@ A comprehensive data pipeline solution for an e-commerce platform, featuring:
 
 ## Architecture 🏗️
 
-![Architecture Diagram](assets/img/pipeline.png)
+![E-commerce Pipeline Architecture](assets/img/pipeline.png)
+*Complete architecture overview of the E-commerce data pipeline*
+
+### Database Designs 💾
+
+#### Production Database Schema
+![Production Database Design](assets/img/prod.png)
+*OLTP database schema*
+
+
+#### Analytics Database Schema
+
+
+![Analytics Database Details](assets/img/etl-1.png)
+*Dimension and fact tables structure*
+
+### Pipeline Implementation 🔧
+
+#### Apache Airflow DAG
+![DAG Visualization](assets/img/dag.png)
+*Data pipeline workflow showing task dependencies*
+
+#### MinIO Data Lake Organization
+![MinIO Console](assets/img/minio.png)
+*Data Lake structure with Bronze, Silver, and Gold layers*
+
+### Monitoring & Analytics 📊
+
+#### Grafana Monitoring Dashboards
+![MinIO Metrics Dashboard](assets/img/minio-grafana.png)
+*MinIO performance monitoring*
+
+![System Metrics Dashboard](assets/img/minio-grafana-2.png)
+*System resource utilization*
+
+![Pipeline Metrics Dashboard](assets/img/minio-grafana-3.png)
+*Pipeline execution metrics*
+
+#### Apache Superset Analytics
+![E-commerce KPIs Dashboard](assets/img/superset.png)
+*Business performance metrics*
+
+![Customer Analytics Dashboard](assets/img/superset-2.png)
+*Customer behavior and sales analysis*
 
 ### Components Overview 🔍
 
