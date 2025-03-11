@@ -203,6 +203,23 @@ services:
     restart: always
     networks:
       - ecommerce-network
+  
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter
+    container_name: postgres-exporter
+    environment:
+      PG_EXPORTER_CONFIG_FILE: /config/config.yml
+      PG_EXPORTER_AUTO_DISCOVER_DATABASES: "true"
+    volumes:
+      - ./postgres_exporter/config.yml:/config/config.yml:ro
+    ports:
+      - 9187:9187
+    depends_on:
+      - postgres
+      - postgres-etl
+      - postgres-prod
+    networks:
+      - ecommerce-network
     
 
   prometheus:

@@ -3,14 +3,15 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
-  - job_name: 'statsd'
-    static_configs:
-      - targets: ['statsd-exporter:9102']
-    
   - job_name: 'airflow'
     static_configs:
-      - targets: ['airflow-webserver:8080']
+      - targets: ['statsd-exporter:9102']
 
   - job_name: 'postgres'
     static_configs:
-      - targets: ['postgres:5432', 'postgres-etl:5432', 'postgres-prod:5432']
+      - targets: ['postgres-exporter:9187']
+
+  - job_name: 'minio'
+    metrics_path: /minio/v2/metrics/cluster
+    static_configs:
+      - targets: ['minio:9000']

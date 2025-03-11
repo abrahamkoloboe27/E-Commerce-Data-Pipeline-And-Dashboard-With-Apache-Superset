@@ -1,0 +1,20 @@
+autodiscover:
+  docker_services:
+    - server_name: postgres
+      host: postgres
+      port: 5432
+      database: airflow
+      user: airflow
+      password: airflow
+    - server_name: postgres-etl
+      host: postgres-etl
+      port: 5432
+      database: ecommerce_metrics
+      user: postgres
+      password: postgres
+    - server_name: postgres-prod
+      host: postgres-prod
+      port: 5432
+      database: e_commerce_database
+      user: postgres
+      password: postgres
