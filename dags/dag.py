@@ -23,7 +23,7 @@ default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
     'catchup': True,
-    'start_date': datetime(2024, 10, 23),
+    'start_date': datetime(2024, 12, 25),
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 2,
@@ -40,7 +40,7 @@ with DAG(
     'ecommerce_metrics_dag-v1.0.2',
     default_args=default_args,
     schedule_interval='@daily',
-    max_active_runs=3,
+    max_active_runs=2,
     tags=['ecommerce', 'data-pipeline'],
     concurrency=5,     
     ) as dag:

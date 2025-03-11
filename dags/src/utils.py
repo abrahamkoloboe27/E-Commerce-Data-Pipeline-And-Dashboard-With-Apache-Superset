@@ -430,20 +430,64 @@ def aggregate_daily_data(**kwargs):
     
     # 1. Fact Sales
     fact_sales = tables['orders']
-    logging.info(f"Initial orders: {fact_sales.shape[0]} lignes")
     
+    logging.info(f"Initial orders: {fact_sales.shape[0]} lignes")
     fact_sales = (
         fact_sales
-        .join(tables['order_items'], on='order_id', how='left')
-        .join(tables['shipments'], on='order_id', how='left')
-        .join(payments_with_users, on='order_id', how='left')
-        .join(tables['users'], on='user_id', how='left')
         .join(
-            tables['addresses'], 
+            tables['order_items'].select([
+                'order_id',
+                'product_id',
+                'quantity',
+                'price'
+            ]), 
+            on='order_id', 
+            how='left'
+        )
+        .join(
+            tables['shipments'].select([
+                'order_id',
+                'shipment_date',
+                'status'
+            ]), 
+            on='order_id', 
+            how='left'
+        )
+        .join(
+            payments_with_users.select([
+                'order_id',
+                'amount',
+                'payment_method'
+            ]), 
+            on='order_id', 
+            how='left'
+        )
+        .join(
+            tables['users'].select([
+                'user_id',
+                pl.col('created_at').alias('user_created_at')
+            ]), 
             on='user_id', 
             how='left'
         )
-        .join(tables['products'], on='product_id', how='left')
+        .join(
+            tables['addresses'].select([
+                'user_id',
+                'country',
+                'city'
+            ]), 
+            on='user_id', 
+            how='left'
+        )
+        .join(
+            tables['products'].select([
+                'product_id',
+                pl.col('name').alias('product_name'),
+                pl.col('price').alias('product_price')
+            ]), 
+            on='product_id', 
+            how='left'
+        )
         .group_by([
             'order_date', 
             'product_id', 
