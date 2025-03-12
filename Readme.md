@@ -133,31 +133,38 @@ docker-compose exec postgres psql -U postgres -f /init-prod.sql
 ## Pipeline Workflow 🔄
 
 ### Data Flow Summary 📊
+
 | Stage | Input | Output | Technology |
 |-------|--------|---------|------------|
-| Extraction 📥 | PostgreSQL | MinIO (Bronze) | Airflow, Polars |
-| Processing 🔄 | Bronze Layer | Silver Layer | Polars |
-| Aggregation 📊 | Silver Layer | Gold Layer | Polars |
-| Visualization 📈 | Gold Layer | Dashboards | Superset |
+| Extraction 📥 | PostgreSQL 🐘 | MinIO (raw-data) ☁️ | Airflow 🌬️, Polars 🐻‍❄️ |
+| Processing 🔄 | raw-data bucket 📦 | cleaned-data bucket ✨ | Polars 🐻‍❄️ |
+| Aggregation 📊 | cleaned-data bucket ✨ | aggregated-data bucket 📈 | Polars 🐻‍❄️ |
+| Loading 📋 | aggregated-data bucket 📈 | PostgreSQL Analytics 🎯 | Polars 🐻‍❄️ |
+| Visualization 📈 | Analytics Database 🏢 | Dashboards 📊 | Superset 🎨 |
 
-1. **Data Extraction (Bronze Layer)**
-   - Daily extraction from PostgreSQL
-   - Raw data storage in MinIO
+1. **Data Extraction (Bronze Layer)** 🔍
+   - Daily extraction from PostgreSQL 🕒
+   - Raw data storage in MinIO `raw-data` bucket 💾
 
-2. **Data Processing (Silver Layer)**
-   - Data cleaning and validation
-   - Schema standardization
-   - Quality checks
+2. **Data Processing (Silver Layer)** ⚙️
+   - Data cleaning and validation in `cleaned-data` bucket 🧹
+   - Schema standardization 📝
+   - Quality checks ✅
 
-3. **Data Aggregation (Gold Layer)**
-   - KPI calculation
-   - Business metrics computation
-   - Analytical views creation
+3. **Data Aggregation (Gold Layer)** 🏆
+   - Data aggregation in `aggregated-data` bucket 📊
+   - KPI calculation 📈
+   - Business metrics computation 💡
 
-4. **Data Visualization**
-   - Real-time dashboards
-   - KPI monitoring
-   - Business insights
+4. **Data Loading** 🔄
+   - Loading into Analytics PostgreSQL database 📥
+   - Fact and dimension tables creation 🏗️
+   - Star schema implementation ⭐
+
+5. **Data Visualization** 🎨
+   - Connection to Analytics database 🔌
+   - Real-time dashboards ⚡
+   - Business insights visualization 📊
 
 ## Monitoring & Observability 📊
 
