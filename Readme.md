@@ -65,7 +65,7 @@ A comprehensive data pipeline solution for an e-commerce platform, featuring:
 |-------|------------|--------------|
 | **Data Source** 📝 | - Data Generator<br>- Production Database | ![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white) ![Faker](https://img.shields.io/badge/Faker-000000?logo=python&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?logo=postgresql&logoColor=white) |
 | **Orchestration** ⚙️ | - Workflow Management<br>- Task Scheduling | ![Airflow](https://img.shields.io/badge/Airflow-017CEE?logo=apache-airflow&logoColor=white) |
-| **Data Lake** 💧 | - Bronze Layer<br>- Silver Layer<br>- Gold Layer | ![MinIO](https://img.shields.io/badge/MinIO-C72E49?logo=minio&logoColor=white) ![Delta](https://img.shields.io/badge/Delta-003366?logo=delta&logoColor=white) |
+| **Data Lake** 💧 | - Bronze Layer<br>- Silver Layer<br>- Gold Layer | ![MinIO](https://img.shields.io/badge/MinIO-C72E49?logo=minio&logoColor=white) ![Parquet](https://img.shields.io/badge/Parquet-3E9DAB?logo=apache&logoColor=white) |
 | **Data Warehouse** 🏢 | - Analytics Database<br>- Star Schema | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?logo=postgresql&logoColor=white) |
 | **Visualization** 📈 | - Dashboards<br>- KPI Monitoring | ![Superset](https://img.shields.io/badge/Superset-EC6A37?logo=apache&logoColor=white) |
 | **Monitoring** 🔍 | - Metrics Collection<br>- Performance Monitoring | ![StatsD](https://img.shields.io/badge/StatsD-4B32C3?logo=graphite&logoColor=white) ![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?logo=prometheus&logoColor=white) ![Grafana](https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white) |
