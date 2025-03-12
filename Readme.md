@@ -43,8 +43,8 @@ A comprehensive data pipeline solution for an e-commerce platform, featuring:
 ### Monitoring & Analytics 📊
 
 #### Grafana Monitoring Dashboards
-![MinIO Metrics Dashboard](assets/img/minio-grafana.png)
-*MinIO performance monitoring*
+![Monitoring Architecture](assets/img/monitoring.png)
+*Monitoring Architecture*
 
 ![System Metrics Dashboard](assets/img/minio-grafana-2.png)
 *System resource utilization*
