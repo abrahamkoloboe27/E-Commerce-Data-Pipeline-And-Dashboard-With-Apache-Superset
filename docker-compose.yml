@@ -140,7 +140,8 @@ services:
     <<: *airflow-common
     command: airflow db init
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U airflow"]
     environment:
@@ -209,15 +210,16 @@ services:
     image: prometheuscommunity/postgres-exporter
     container_name: postgres-exporter
     environment:
-      PG_EXPORTER_CONFIG_FILE: "/config/postgres_exporter.yml"
-    volumes:
-      - ./postgres_exporter/postgres_exporter.yml:/config/postgres_exporter.yml
+      DATA_SOURCE_NAME: "postgresql://postgres:postgres@postgres-prod:5432/?sslmode=disable"
+      #- PG_EXPORTER_EXTEND_QUERY_PATH=/config/postgres_exporter.yml
+    # volumes:
+    #   - ./postgres_exporter/postgres_exporter.yml:/config/postgres_exporter.yml
     ports:
       - 9187:9187
-    depends_on:
-      - postgres
-      - postgres-etl
-      - postgres-prod
+    # depends_on:
+    #   - postgres
+    #   - postgres-etl
+    #   - postgres-prod
     networks:
       - ecommerce-network
 
@@ -258,6 +260,18 @@ services:
     networks:
       - ecommerce-network
     
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    ports:
+      - "8081:8080"  # Exposition du port pour accéder à l'interface de cAdvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - ecommerce-network
 
 volumes:
   postgres-db-volume:

@@ -1,5 +1,7 @@
-# Version minimale fonctionnelle
-databases:
-  - dsn: postgresql://airflow:airflow@postgres:5432/airflow?sslmode=disable
-  - dsn: postgresql://postgres:postgres@postgres-etl:5432/ecommerce_metrics?sslmode=disable
-  - dsn: postgresql://postgres:postgres@postgres-prod:5432/e_commerce_database?sslmode=disable
+data_source_names:
+  - dsn: postgresql://airflow:airflow@postgres:5432/?sslmode=disable
+    metrics_map: default_metrics
+  - dsn: postgresql://postgres:postgres@postgres-etl:5432/?sslmode=disable
+    metrics_map: default_metrics
+  - dsn: postgresql://postgres:postgres@postgres-prod:5432/?sslmode=disable
+    metrics_map: default_metrics

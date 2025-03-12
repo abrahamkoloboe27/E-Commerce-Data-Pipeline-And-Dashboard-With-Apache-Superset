@@ -136,11 +136,11 @@ docker-compose exec postgres psql -U postgres -f /init-prod.sql
 
 | Stage | Input | Output | Technology |
 |-------|--------|---------|------------|
-| Extraction 📥 | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?logo=postgresql&logoColor=white) | ![MinIO](https://img.shields.io/badge/MinIO-C72E49?logo=minio&logoColor=white) (raw-data) | ![Airflow](https://img.shields.io/badge/Airflow-017CEE?logo=apache-airflow&logoColor=white), ![Polars](https://img.shields.io/badge/Polars-2A2A2A?logo=python&logoColor=white) |
-| Processing 🔄 | raw-data bucket 📦 | cleaned-data bucket ✨ | ![Polars](https://img.shields.io/badge/Polars-2A2A2A?logo=python&logoColor=white) |
-| Aggregation 📊 | cleaned-data bucket ✨ | aggregated-data bucket 📈 | ![Polars](https://img.shields.io/badge/Polars-2A2A2A?logo=python&logoColor=white) |
-| Loading 📋 | aggregated-data bucket 📈 | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?logo=postgresql&logoColor=white) Analytics | ![Polars](https://img.shields.io/badge/Polars-2A2A2A?logo=python&logoColor=white) |
-| Visualization 📈 | Analytics Database 🏢 | Dashboards 📊 | ![Superset](https://img.shields.io/badge/Superset-EC6A37?logo=apache&logoColor=white) |
+| Extraction 📥 | PostgreSQL (Production Database) 🐘 | MinIO (raw-data) ☁️ | Airflow 🌬️, Polars 🐻‍❄️ |
+| Processing 🔄 | raw-data bucket 📦 | cleaned-data bucket ✨ | Polars 🐻‍❄️ |
+| Aggregation 📊 | cleaned-data bucket ✨ | aggregated-data bucket 📈 | Polars 🐻‍❄️ |
+| Loading 📋 | aggregated-data bucket 📈 | PostgreSQL Analytics 🎯 | Polars 🐻‍❄️ |
+| Visualization 📈 | Analytics Database (PostgreSQL) 🏢 | Dashboards 📊 |Apache Superset 🎨 |
 
 1. **Data Extraction (Bronze Layer)** 🔍
    - Daily extraction from PostgreSQL 🕒

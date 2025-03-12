@@ -17,3 +17,6 @@ scrape_configs:
     scheme: http
     static_configs:
       - targets: ['minio:9000']
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
