@@ -48,9 +48,9 @@ services:
       - "5432:5432"
     networks:
       - ecommerce-network
-    # depends_on : 
-    #    data-genrator: 
-    #      #condition: service_started
+    depends_on : 
+      data-genrator: 
+        condition: service_started
     #       condition: service_completed_successfully
 
   data-genrator:
@@ -166,9 +166,9 @@ services:
     volumes:
       - ~/minio/data:/data
     command: server /data --console-address ":9001" & mc mb ecommerce-data
-    # depends_on:
-    #   airflow-webserver:
-    #     condition: service_started
+    depends_on:
+      airflow-webserver:
+        condition: service_started
     networks:
       - ecommerce-network
 
@@ -184,8 +184,8 @@ services:
       - ADMIN_EMAIL=admin@superset.com
       - ADMIN_PASSWORD=admin
       - LOAD_EXAMPLES=yes
-    # depends_on:
-    #   - airflow-webserver
+    depends_on:
+      - airflow-webserver
     ports:
       - '8088:8088'
     networks:
@@ -216,10 +216,10 @@ services:
     #   - ./postgres_exporter/postgres_exporter.yml:/config/postgres_exporter.yml
     ports:
       - 9187:9187
-    # depends_on:
-    #   - postgres
-    #   - postgres-etl
-    #   - postgres-prod
+    depends_on:
+      - postgres
+      - postgres-etl
+      - postgres-prod
     networks:
       - ecommerce-network
 
