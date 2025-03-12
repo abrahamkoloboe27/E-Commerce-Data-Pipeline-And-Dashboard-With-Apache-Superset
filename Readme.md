@@ -83,7 +83,7 @@ A comprehensive data pipeline solution for an e-commerce platform, featuring:
 | Tool | Purpose | Badge |
 |------|----------|-------|
 | Polars | Data transformation | ![Polars](https://img.shields.io/badge/Polars-2A2A2A?logo=python&logoColor=white) |
-| Delta Lake | Data versioning | ![Delta](https://img.shields.io/badge/Delta-003366?logo=delta&logoColor=white) |
+| Parquet | Data storage | ![Parquet](https://img.shields.io/badge/Parquet-3E9DAB?logo=apache&logoColor=white) |
 
 ## Quick Start 🚀
 
