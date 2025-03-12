@@ -27,7 +27,7 @@ A comprehensive data pipeline solution for an e-commerce platform, featuring:
 #### Analytics Database Schema
 
 
-![Analytics Database Details](assets/img/etl-1.png)
+![Analytics Database Details](assets/img/etl.png)
 *Dimension and fact tables structure*
 
 ### Pipeline Implementation 🔧
