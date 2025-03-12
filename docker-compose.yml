@@ -210,7 +210,7 @@ services:
     image: prometheuscommunity/postgres-exporter
     container_name: postgres-exporter
     environment:
-      DATA_SOURCE_NAME: "postgresql://postgres:postgres@postgres-prod:5432/?sslmode=disable"
+      DATA_SOURCE_NAME: "postgresql://postgres:postgres@postgres-prod:5432/?sslmode=disable,postgresql://postgres:postgres@postgres-etl:5432/?sslmode=disable,postgresql://airflow:airflow@postgres:5432/?sslmode=disable"
       #- PG_EXPORTER_EXTEND_QUERY_PATH=/config/postgres_exporter.yml
     # volumes:
     #   - ./postgres_exporter/postgres_exporter.yml:/config/postgres_exporter.yml
