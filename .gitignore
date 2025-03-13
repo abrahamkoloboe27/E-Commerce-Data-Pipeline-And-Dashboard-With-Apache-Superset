@@ -10,3 +10,4 @@ ml_pipeline.log
 .env
 datadog.yml
 codeviz-diagram-2025-02-03T13-29-40.drawio
+.DS_Store

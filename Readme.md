@@ -112,7 +112,7 @@ A comprehensive data engineering platform for e-commerce including:
 | Storage | 50GB SSD | 100GB NVMe |
 
 ```bash
-git clone https://github.com/your-repo.git
+git clone https://github.com/abrahamkoloboe27/E-Commerce-Data-Pipeline-And-Dashboard-With-Apache-Superset
 cd e-commerce-pipeline
 make build  # Build Docker images
 make up  # Start containers
