@@ -62,6 +62,10 @@ A comprehensive data engineering platform for e-commerce including:
 
 ## 🛠️ Pipeline Components
 
+### 📦 Data Generation
+![Data Generator Architecture](assets/img/data-generator.png)  
+*Synthetic data generation workflow with Python Faker*
+
 ### 🔄 Orchestration Workflow
 ![🔄 Data Flow Overview](assets/img/data-flow.png)  
 *Complete data flow from source to dashboards*
@@ -117,28 +121,28 @@ make down  # Stop and remove containers
 make down-volumes  # Remove containers and volumes
 make down-volumes-build-up  # Remove containers, volumes, and build new images
 ```
-
-### 🔗 Accès aux Services
-| Service | URL | Identifiants | Port |
-|---------|-----|--------------|------|
+### 🔗 Service Access
+| Service | URL | Credentials | Port |
+|---------|-----|------------|------|
 | Airflow | http://localhost:8080 | admin/admin | 8080 |
 | MinIO | http://localhost:9001 | minioadmin/minioadmin | 9001 |
 | Superset | http://localhost:8088 | admin/admin | 8088 |
+| Grafana  | http://localhost:3000 | grafana/grafana | 3000 |
 
 ## 📌 Features Highlights
 
-| Fonctionnalité | Technologie | Bénéfice |
-|----------------|-------------|----------|
-| Data Lake hiérarchisé | MinIO + Parquet | 🏷️ Structuration des données brutes/transformées |
-| ETL modulaire | Airflow + Python | 🔄 Reproductibilité des workflows |
-| Monitoring unifié | Grafana + Prometheus | 📊 Vue 360° des performances |
+| Feature | Technology | Benefit |
+|---------|------------|---------|
+| Hierarchical Data Lake | MinIO + Parquet | 🏷️ Raw/transformed data structuring |
+| Modular ETL | Airflow + Python | 🔄 Workflow reproducibility |
+| Unified Monitoring | Grafana + Prometheus | 📊 360° performance view |
 
 ## 📜 License & Contact
 
-📄 **License** : [MIT](LICENSE)  
-📧 **Contact** : [abklb27@gmail.com](mailto:abklb27@gmail.com)  
-👨💻 **Auteur** : [Abraham Koloboe](https://linkedin.com/in/your-profile)
+📄 **License**: [MIT](LICENSE)  
+📧 **Contact**: [abklb27@gmail.com](mailto:abklb27@gmail.com)  
+👨💻 **Author**: [Abraham Koloboe](https://linkedin.com/in/your-profile)
 
 
-**[⬆ Retour en haut](#e-commerce-data-pipeline--analytics-dashboard-)**  
-*✨ Fait avec passion pour la data engineering !*
+**[⬆ Back to top](#e-commerce-data-pipeline--analytics-dashboard-)**  
+*✨ Made with passion for data engineering!*
