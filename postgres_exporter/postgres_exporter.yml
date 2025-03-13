@@ -1,7 +1,0 @@
-data_source_names:
-  - dsn: postgresql://airflow:airflow@postgres:5432/?sslmode=disable
-    metrics_map: default_metrics
-  - dsn: postgresql://postgres:postgres@postgres-etl:5432/?sslmode=disable
-    metrics_map: default_metrics
-  - dsn: postgresql://postgres:postgres@postgres-prod:5432/?sslmode=disable
-    metrics_map: default_metrics
