@@ -123,8 +123,7 @@ services:
     <<: *airflow-common
     command: webserver
     depends_on:
-      airflow-init:
-        condition: service_completed_successfully
+      - airflow-init
     ports:
       - "8080:8080"
     healthcheck:
