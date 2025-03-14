@@ -40,6 +40,7 @@ A comprehensive data engineering platform for e-commerce including:
 
 ### 🛒 Production Database (OLTP)
 ![OLTP Schema](assets/img/prod.png)  
+
 *Relational structure optimized for transactions*
 
 | Characteristic | Details |
@@ -63,14 +64,17 @@ A comprehensive data engineering platform for e-commerce including:
 ## 🛠️ Pipeline Components
 
 ### 📦 Data Generation
-![Data Generator Architecture](assets/img/data-generator.png)  
+![Data Generator Architecture](assets/img/data-generator.png) 
+
 *Synthetic data generation workflow with Python Faker*
 
 ### 🔄 Orchestration Workflow
 ![🔄 Data Flow Overview](assets/img/data-flow.png)  
+
 *Complete data flow from source to dashboards*
 
 ![Airflow DAG](assets/img/dag.png)  
+
 *ETL task management with Apache Airflow*
 
 | Step | Tools | Output |
@@ -83,6 +87,7 @@ A comprehensive data engineering platform for e-commerce including:
 
 ### 🖥️ Operational Dashboarding
 ![Superset Dashboard](assets/img/superset.png)  
+
 *Real-time business KPIs with Apache Superset*
 
 | Metric | Tool | Emoji |
@@ -93,6 +98,7 @@ A comprehensive data engineering platform for e-commerce including:
 
 ### 🔍 Monitoring Stack
 ![Monitoring Stack](assets/img/monitoring.png)  
+
 *Container and metrics monitoring*
 
 | Component | Function | Dashboard |
