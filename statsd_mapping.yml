@@ -114,6 +114,55 @@ mappings:
     name: "af_agg_celery_task_timeout_error"
     labels:
       airflow_id: "$1"
+  - match: "*.task_removed_from_dag.*"
+    match_metric_type: counter
+    name: "af_agg_task_removed_from_dag"
+    labels:
+      airflow_id: "$1"
+      dag_id: "$2"
+  - match: "*.task_restored_to_dag.*"
+    match_metric_type: counter
+    name: "af_agg_task_restored_to_dag"
+    labels:
+      airflow_id: "$1"
+      dag_id: "$2"
+  - match: "(.+)\\.task_instance_created_(.+)$"
+    match_metric_type: counter
+    name: "af_agg_task_instance_created"
+    match_type: regex
+    labels:
+      airflow_id: "$1"
+      operator_name: "$2"
+  - match: "*.dag_processing.file_path_queue_update_count"
+    match_metric_type: counter
+    name: "af_agg_dag_processing_file_path_queue_update_count"
+    labels:
+      airflow_id: "$1"
+  - match: "*.triggers.succeeded"
+    match_metric_type: counter
+    name: "af_agg_triggers_succeeded"
+    labels:
+      airflow_id: "$1"
+  - match: "*.triggers.failed"
+    match_metric_type: counter
+    name: "af_agg_triggers_failed"
+    labels:
+      airflow_id: "$1"
+  - match: "*.triggers.blocked_main_thread"
+    match_metric_type: counter
+    name: "af_agg_triggers_blocked_main_thread"
+    labels:
+      airflow_id: "$1"
+  - match: "*.dataset.updates"
+    match_metric_type: counter
+    name: "af_agg_dataset_updates"
+    labels:
+      airflow_id: "$1"
+  - match: "*.dataset.triggered_dagruns"
+    match_metric_type: counter
+    name: "af_agg_dataset_triggered_dagruns"
+    labels:
+      airflow_id: "$1"
 
   # === Gauges ===
   - match: "*.dagbag_size"
@@ -212,6 +261,43 @@ mappings:
     name: "af_agg_smart_sensor_operator_infra_failures"
     labels:
       airflow_id: "$1"
+  - match: "*.scheduler.tasks.executable"
+    match_metric_type: gauge
+    name: "af_agg_scheduler_tasks_executable"
+    labels:
+      airflow_id: "$1"
+  - match: "*.scheduler.tasks.queued"
+    match_metric_type: gauge
+    name: "af_agg_scheduler_tasks_queued"
+    labels:
+      airflow_id: "$1"
+  - match: "*.pool.deferred_slots.*"
+    match_metric_type: gauge
+    name: "af_agg_pool_deferred_slots"
+    labels:
+      airflow_id: "$1"
+      pool_name: "$2"
+  - match: "*.pool.scheduled_slots.*"
+    match_metric_type: gauge
+    name: "af_agg_pool_scheduled_slots"
+    labels:
+      airflow_id: "$1"
+      pool_name: "$2"
+  - match: "*.dag_processing.file_path_queue_size"
+    match_metric_type: gauge
+    name: "af_agg_dag_processing_file_path_queue_size"
+    labels:
+      airflow_id: "$1"
+  - match: "*.triggers.running"
+    match_metric_type: gauge
+    name: "af_agg_triggers_running"
+    labels:
+      airflow_id: "$1"
+  - match: "*.triggers.failed_jobs"
+    match_metric_type: gauge
+    name: "af_agg_triggers_failed_jobs"
+    labels:
+      airflow_id: "$1"
 
   # === Timers ===
   - match: "*.dagrun.dependency-check.*"
@@ -262,3 +348,15 @@ mappings:
     labels:
       airflow_id: "$1"
       dag_id: "$2"
+  - match: "*.collect_db_dags"
+    match_metric_type: observer
+    name: "af_agg_collect_db_dags"
+    labels:
+      airflow_id: "$1"
+  - match: "*.dag.*.*.queued_duration"
+    match_metric_type: observer
+    name: "af_agg_dag_task_queued_duration"
+    labels:
+      airflow_id: "$1"
+      dag_id: "$2"
+      task_id: "$3"
